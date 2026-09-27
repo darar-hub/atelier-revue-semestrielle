@@ -1,0 +1,706 @@
+<title>Groupes Atelier PEV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#122A3A; --ink-soft:#3F5566; --paper:#F4F6F5; --card:#FFFFFF; --line:#DCE3E2;
+    --navy:#123A57; --navy-deep:#0B2740; --amber:#D98A2B; --amber-ink:#5C3B0D;
+    --green:#2E7D5B; --chip-bg:#E9EEEC; --focus:#2E7D5B; --danger:#B3441E;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#EAF0EE; --ink-soft:#AEC0BC; --paper:#0E1B22; --card:#152531; --line:#274050;
+      --navy:#8FC1E8; --navy-deep:#123A57; --amber:#E8A94E; --amber-ink:#2A1B05;
+      --green:#67C79A; --chip-bg:#1D3540; --danger:#E2896A;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#EAF0EE; --ink-soft:#AEC0BC; --paper:#0E1B22; --card:#152531; --line:#274050;
+    --navy:#8FC1E8; --navy-deep:#123A57; --amber:#E8A94E; --amber-ink:#2A1B05;
+    --green:#67C79A; --chip-bg:#1D3540; --danger:#E2896A;
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; padding-inline:20px; padding-block:28px 56px;}
+  a{color:inherit}
+  h1,h2,h3{font-family:"Fraunces", Georgia, serif; text-wrap:balance; margin:0}
+  .wrap{max-width:1040px; margin-inline:auto}
+
+  header.top{display:flex; flex-direction:column; gap:10px; padding-block:6px 22px; border-bottom:1px solid var(--line); margin-bottom:22px;}
+  .eyebrow{font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11.5px; letter-spacing:.09em; text-transform:uppercase; color:var(--green); font-weight:500;}
+  header.top h1{font-size:clamp(24px,4vw,34px); font-weight:600; color:var(--navy-deep)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) header.top h1{color:var(--ink)}}
+  :root[data-theme="dark"] header.top h1{color:var(--ink)}
+  .dates{font-size:14px; color:var(--ink-soft)}
+  .intro{font-size:14.5px; line-height:1.6; color:var(--ink-soft); max-width:66ch}
+  .navrow{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+  .navchip{font-size:13px; font-weight:600; padding:8px 14px; border-radius:999px; cursor:pointer; background:var(--chip-bg); color:var(--ink-soft); border:1px solid transparent; font-family:inherit;}
+  .navchip:hover{border-color:var(--green)}
+  .navchip.on{background:var(--navy); color:#fff}
+
+  .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(280px,1fr)); gap:16px; margin-top:4px;}
+  .card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:12px; cursor:pointer; transition:border-color .15s ease;}
+  .card:hover{border-color:var(--green)}
+  .card:focus-visible{outline:2px solid var(--focus); outline-offset:2px}
+  .card .num{font-family:"IBM Plex Mono", monospace; font-size:11px; color:var(--ink-soft); letter-spacing:.06em;}
+  .card h3{font-size:21px; font-weight:600; color:var(--navy-deep)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .card h3{color:var(--ink)}}
+  :root[data-theme="dark"] .card h3{color:var(--ink)}
+  .card .meta{font-size:13px; color:var(--ink-soft)}
+  .card .go{margin-top:auto; font-size:13.5px; font-weight:600; color:var(--green); display:flex; align-items:center; gap:6px;}
+
+  .view{display:none}
+  .view.active{display:block}
+
+  .backlink{display:inline-flex; align-items:center; gap:6px; font-size:13.5px; font-weight:600; color:var(--ink-soft); margin-bottom:22px; cursor:pointer; background:none; border:none; padding:0; font-family:inherit;}
+  .backlink:hover{color:var(--green)}
+
+  .group-head{display:flex; flex-wrap:wrap; gap:20px; align-items:flex-start; justify-content:space-between; margin-bottom:22px;}
+  .group-head h2{font-size:clamp(22px,4vw,30px); font-weight:600; color:var(--navy-deep)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .group-head h2{color:var(--ink)}}
+  :root[data-theme="dark"] .group-head h2{color:var(--ink)}
+  .qr-box{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; text-align:center; width:140px; flex:none;}
+  .qr-box img{width:100%; height:auto; display:block; border-radius:4px}
+  .qr-box .cap{font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--ink-soft); margin-top:8px; letter-spacing:.04em}
+
+  .tools{display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; margin-bottom:24px}
+  .tool{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:10px;}
+  .tool .tag{align-self:flex-start; font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em; text-transform:uppercase; background:var(--chip-bg); color:var(--ink-soft); padding:3px 8px; border-radius:5px;}
+  .tool h4{font-size:16px; margin:0; font-weight:600}
+  .tool p{font-size:13px; color:var(--ink-soft); margin:0; line-height:1.5}
+  .btn{margin-top:4px; display:inline-flex; align-items:center; justify-content:center; gap:8px; background:var(--navy); color:#fff; border:none; border-radius:9px; padding:11px 16px; font-size:14px; font-weight:600; cursor:pointer; font-family:inherit;}
+  .btn:hover{background:var(--navy-deep)}
+  .btn.ghost{background:transparent; color:var(--navy); border:1px solid var(--line)}
+  .btn.ghost:hover{border-color:var(--green); color:var(--green)}
+  .btn[disabled]{opacity:.6; cursor:progress}
+  .btn.sm{padding:8px 12px; font-size:12.5px}
+
+  .note{font-size:12.5px; color:var(--ink-soft); background:var(--chip-bg); border-radius:10px; padding:12px 14px; line-height:1.5;}
+  .filepill{margin-top:4px; display:inline-flex; align-items:center; gap:8px; font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(--chip-bg); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:9px 12px; width:fit-content;}
+  .filepill::before{content:"📄"; font-size:13px}
+  footer{margin-top:44px; font-size:12px; color:var(--ink-soft); text-align:center}
+
+  section.block{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px; margin-bottom:20px;}
+  section.block > .block-head{display:flex; align-items:center; justify-content:space-between; gap:12px; cursor:pointer;}
+  section.block > .block-head h3{font-size:18px; font-weight:600; color:var(--navy-deep)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) section.block > .block-head h3{color:var(--ink)}}
+  :root[data-theme="dark"] section.block > .block-head h3{color:var(--ink)}
+  section.block .block-sub{font-size:12.5px; color:var(--ink-soft); margin-top:2px}
+  section.block .chevron{font-size:14px; color:var(--ink-soft); transition:transform .15s ease}
+  section.block.open .chevron{transform:rotate(90deg)}
+  section.block .block-body{display:none; margin-top:18px; padding-top:18px; border-top:1px solid var(--line);}
+  section.block.open .block-body{display:block}
+
+  label{font-size:12.5px; font-weight:600; color:var(--ink-soft); display:block; margin-bottom:5px}
+  input, select, textarea{width:100%; font:inherit; font-size:14.5px; padding:10px 12px; border:1px solid var(--line); border-radius:9px; background:var(--card); color:var(--ink);}
+  textarea{min-height:60px; resize:vertical}
+  input:focus, select:focus, textarea:focus{outline:2px solid var(--green); outline-offset:1px}
+  .fieldgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:14px}
+  .field{margin-bottom:14px}
+  .subhead{font-size:13px; font-weight:600; color:var(--navy); margin:18px 0 10px; padding-top:14px; border-top:1px dashed var(--line);}
+  .subhead:first-child{border-top:none; padding-top:0; margin-top:0}
+
+  table.matrix{width:100%; border-collapse:collapse; font-size:13px; margin-bottom:10px}
+  table.matrix th{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); text-align:left; padding:6px 8px; border-bottom:1px solid var(--line)}
+  table.matrix td{padding:6px 8px; border-bottom:1px solid var(--line); vertical-align:top}
+  table.matrix td.theme{font-weight:600; font-size:12.5px; width:15%}
+  table.matrix input, table.matrix textarea, table.matrix select{font-size:13px; padding:7px 9px}
+
+  .pct-out{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--green); margin-top:6px}
+  .savebar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:16px}
+  .savebar .status{font-size:12px; color:var(--ink-soft)}
+
+  .kpi-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:22px}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px}
+  .kpi .n{font-family:"Fraunces",serif; font-size:28px; font-weight:600; color:var(--navy-deep)}
+  @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .kpi .n{color:var(--ink)}}
+  :root[data-theme="dark"] .kpi .n{color:var(--ink)}
+  .kpi .l{font-size:12px; color:var(--ink-soft); margin-top:2px}
+
+  table.dash{width:100%; border-collapse:collapse; font-size:13px; margin-bottom:8px}
+  table.dash th{font-size:11px; text-transform:uppercase; letter-spacing:.03em; color:var(--ink-soft); text-align:left; padding:8px; border-bottom:1px solid var(--line)}
+  table.dash td{padding:8px; border-bottom:1px solid var(--line)}
+  .feedbox{background:var(--chip-bg); border-radius:10px; padding:12px 14px; font-size:13.5px; line-height:1.5; margin-top:6px; white-space:pre-wrap}
+  .empty{font-size:13px; color:var(--ink-soft); font-style:italic}
+  .rowdel{background:transparent; border:none; color:var(--danger); cursor:pointer; font-size:12px; font-family:inherit; padding:0}
+  .deviceNote{font-size:12px; color:var(--ink-soft); background:var(--chip-bg); border-radius:10px; padding:10px 12px; margin-bottom:16px}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <span class="eyebrow">PEV Djibouti &middot; Atelier de revue semestrielle</span>
+    <h1>Espace de l'atelier</h1>
+    <div class="dates">Djibouti ville &middot; 30 septembre – 1<sup>er</sup> octobre 2026</div>
+    <p class="intro">Chaque groupe scanne le QR code de sa table (ou clique sur sa carte) pour retrouver son canevas, remplir ses travaux de groupe et transmettre ses résultats au facilitateur. Aucune connexion ou compte n'est nécessaire : tout fonctionne directement dans le navigateur.</p>
+    <div class="navrow">
+      <button class="navchip" data-nav="">Groupes de travail</button>
+      <button class="navchip" data-nav="dashboard">Espace facilitateur</button>
+    </div>
+  </header>
+
+  <main id="hub" class="view">
+    <div class="grid" id="grid"></div>
+  </main>
+
+  <main id="group" class="view">
+    <button class="backlink" id="backBtn">&larr; Tous les groupes</button>
+    <div class="group-head">
+      <div>
+        <span class="eyebrow" id="g-eyebrow">Groupe</span>
+        <h2 id="g-title">Région</h2>
+      </div>
+      <div class="qr-box">
+        <img id="g-qr" src="" alt="QR code du groupe">
+        <div class="cap">Scanner pour rouvrir</div>
+      </div>
+    </div>
+
+    <div class="tools">
+      <div class="tool">
+        <span class="tag">Canevas</span>
+        <h4 id="g-canevas-title">Présentation à compléter</h4>
+        <p>Modèle PowerPoint pré-rempli (1<sup>er</sup> semestre 2026) : complétude/promptitude, visites de site, cas notifiés, indicateurs PFA &amp; rougeole, forces/faiblesses, perspectives.</p>
+        <div class="filepill" id="g-canevas-pill">canevas-ali-sabieh.pptx</div>
+      </div>
+      <div class="tool">
+        <span class="tag">Données</span>
+        <h4 id="g-data-title">Fichier de données</h4>
+        <p id="g-data-desc">Fichier de suivi de la région, à utiliser pour compléter le canevas pendant les travaux de groupe.</p>
+        <div class="filepill" id="g-data-pill">donnees-ali-sabieh.xls</div>
+      </div>
+    </div>
+    <p class="note">Ces deux fichiers sont remis par le facilitateur sur la tablette/ordinateur du groupe (ou disponibles dans le dossier partagé de l'atelier). Les deux blocs ci-dessous permettent de saisir vos résultats directement au téléphone/tablette et de les transmettre au facilitateur — sans connexion ni compte.</p>
+
+    <section class="block" id="blockA">
+      <div class="block-head">
+        <div>
+          <h3>Travail de groupe 1 — Synthèse régionale S1 2026</h3>
+          <div class="block-sub">Complétude/promptitude, visites, cas notifiés, indicateurs, forces/faiblesses, analyse des problèmes</div>
+        </div>
+        <span class="chevron">&rsaquo;</span>
+      </div>
+      <div class="block-body" id="blockA-body"></div>
+    </section>
+
+    <section class="block" id="blockB">
+      <div class="block-head">
+        <div>
+          <h3>Travail de groupe 2 — Surveillance Polio et autres MEV</h3>
+          <div class="block-sub">Problèmes rencontrés, causes, propositions de solutions</div>
+        </div>
+        <span class="chevron">&rsaquo;</span>
+      </div>
+      <div class="block-body" id="blockB-body"></div>
+    </section>
+  </main>
+
+  <main id="dashboard" class="view">
+    <button class="backlink" id="backBtn2">&larr; Tous les groupes</button>
+    <span class="eyebrow">Outil du facilitateur</span>
+    <h2 style="margin-top:6px;">Espace facilitateur — synthèse &amp; feedback</h2>
+    <p class="intro" style="margin-top:8px;">Compilez ici, en direct pendant la plénière, les résultats annoncés par chaque groupe. Tout est enregistré directement sur cet appareil — aucune connexion ni compte n'est requis.</p>
+    <p class="deviceNote">Ces données restent sur cet appareil (ce téléphone/cet ordinateur) : utilisez toujours le même pour les retrouver. Le bouton « Copier » permet de partager un résumé par email/WhatsApp ou de le projeter.</p>
+
+    <div class="kpi-row" id="kpiRow"></div>
+
+    <section class="block open">
+      <div class="block-head"><div><h3>Inscriptions</h3><div class="block-sub">Ajouter un participant enregistré (à partir des emails reçus ou du check-in)</div></div></div>
+      <div class="block-body" style="display:block">
+        <div class="fieldgrid">
+          <div class="field"><label>Nom</label><input id="reg-nom" placeholder="Nom et prénom"></div>
+          <div class="field"><label>Structure</label><input id="reg-structure" placeholder="Ex. OMS, PEV..."></div>
+          <div class="field"><label>Groupe</label>
+            <select id="reg-groupe"></select>
+          </div>
+        </div>
+        <div class="savebar">
+          <button class="btn sm" id="reg-add">+ Ajouter</button>
+          <button class="btn ghost sm" id="reg-copy">Copier la liste</button>
+          <span class="status" id="reg-status"></span>
+        </div>
+        <table class="dash" id="reg-table" style="margin-top:16px"></table>
+      </div>
+    </section>
+
+    <section class="block open">
+      <div class="block-head"><div><h3>Synthèse &amp; feedback par groupe</h3><div class="block-sub">Choisir un groupe pour saisir sa synthèse compilée et son feedback</div></div></div>
+      <div class="block-body" style="display:block">
+        <div class="field" style="max-width:300px">
+          <label>Groupe</label>
+          <select id="dash-groupe"></select>
+        </div>
+        <div id="dash-groupe-form"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Programme Élargi de Vaccination — République de Djibouti</footer>
+</div>
+
+<script>
+(function(){
+  var GROUPS = [
+    {slug:"ali-sabieh", name:"Ali Sabieh", kind:"Région", dataLabel:"Ali_Sabieh_bon.xls"},
+    {slug:"arta", name:"Arta", kind:"Région", dataLabel:"Arta_bon.xls"},
+    {slug:"dikhil", name:"Dikhil", kind:"Région", dataLabel:"Dikhil_bon.xls"},
+    {slug:"obock", name:"Obock", kind:"Région", dataLabel:"Obock_bon.xls"},
+    {slug:"tadjourah", name:"Tadjourah", kind:"Région", dataLabel:"Tadjourah_bon.xls"},
+    {slug:"djibouti-ville", name:"Djibouti Ville", kind:"Points focaux FOSA", dataLabel:"Outil_vierge_bon.xls"}
+  ];
+  var DEST_EMAIL = 'hyusef@gmail.com';
+  var THEMES = ["Réalisation de visites sur site","Détection des cas","Investigation des cas","Logistique","Communication et retour d'information","Collecte et interprétation des données","Personnel","Rapports mensuels"];
+  var MEV_LIST = ["PFA","Rougeole/Rubéole","TNN","Fièvre Jaune","MAPI","Autres (préciser)"];
+  var PROBLEMES_FIXES = [
+    "Insuffisance du matériel en quantité et en qualité",
+    "Insuffisance de motivation de certains agents collecteurs",
+    "Indisponibilité des PF pour la décharge des matériels (AD)",
+    "Absence de réunion de monitoring",
+    "Absence de feed-back des résultats",
+    "Insuffisance de supervision",
+    "Identification tardive des cas et réduction du nombre de cas étudiés",
+    "Envoi de l'échantillon au laboratoire (délai)",
+    "Mauvaise mise en œuvre des visites des sites",
+    "Mauvaise qualité des spécimens collectés",
+    "Absence de système d'archivage des cas notifiés et instruits (listes, fiches d'enquête, tableaux de bord)"
+  ];
+
+  // Tout fonctionne en local (localStorage) sur l'appareil : pas de compte, pas de connexion requise.
+  function lsGet(key, fallback){ try{ var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } }
+  function lsSet(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+  function genId(){ return 'r_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,8); }
+  function findGroup(slug){ for (var i=0;i<GROUPS.length;i++) if (GROUPS[i].slug===slug) return GROUPS[i]; return null; }
+
+  function openMailto(subject, body){
+    var url = 'mailto:' + encodeURIComponent(DEST_EMAIL) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+    window.location.href = url;
+  }
+
+  function copyText(text, statusEl){
+    function done(ok){ if (statusEl) statusEl.textContent = ok ? 'Copié dans le presse-papiers.' : "Impossible de copier automatiquement — sélectionnez et copiez le texte."; }
+    if (navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(function(){ done(true); }).catch(function(){ done(false); });
+    } else {
+      try{
+        var ta = document.createElement('textarea');
+        ta.value = text; ta.style.position='fixed'; ta.style.opacity='0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        done(true);
+      }catch(e){ done(false); }
+    }
+  }
+
+  // ================= HUB GRID =================
+  var grid = document.getElementById('grid');
+  GROUPS.forEach(function(g, i){
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.tabIndex = 0;
+    card.setAttribute('role','button');
+    card.innerHTML =
+      '<div style="display:flex; gap:14px; align-items:flex-start; justify-content:space-between;">' +
+        '<div style="display:flex; flex-direction:column; gap:12px;">' +
+          '<span class="num">GROUPE ' + String(i+1).padStart(2,'0') + '</span>' +
+          '<h3>' + g.name + '</h3>' +
+          '<span class="meta">' + g.kind + '</span>' +
+        '</div>' +
+        '<img src="files/qr-' + g.slug + '.png" alt="QR groupe ' + g.name + '" style="width:64px;height:64px;border-radius:6px;border:1px solid var(--line);flex:none;">' +
+      '</div>' +
+      '<span class="go">Voir les outils &rarr;</span>';
+    function open(){ location.hash = g.slug; }
+    card.addEventListener('click', open);
+    card.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); open(); } });
+    grid.appendChild(card);
+  });
+
+  var regGroupeSelect = document.getElementById('reg-groupe');
+  var dashGroupeSelect = document.getElementById('dash-groupe');
+  GROUPS.forEach(function(g){
+    var o1 = document.createElement('option'); o1.value = g.slug; o1.textContent = g.name; regGroupeSelect.appendChild(o1);
+    var o2 = document.createElement('option'); o2.value = g.slug; o2.textContent = g.name; dashGroupeSelect.appendChild(o2);
+  });
+
+  // ================= NAV / ROUTER =================
+  var hub = document.getElementById('hub');
+  var groupView = document.getElementById('group');
+  var dashView = document.getElementById('dashboard');
+  var gTitle = document.getElementById('g-title');
+  var gEyebrow = document.getElementById('g-eyebrow');
+  var gDataTitle = document.getElementById('g-data-title');
+  var gDataDesc = document.getElementById('g-data-desc');
+  var gQr = document.getElementById('g-qr');
+  document.getElementById('backBtn').addEventListener('click', function(){ location.hash = ''; });
+  document.getElementById('backBtn2').addEventListener('click', function(){ location.hash = ''; });
+  document.querySelectorAll('.navchip').forEach(function(btn){
+    btn.addEventListener('click', function(){ location.hash = btn.getAttribute('data-nav'); });
+  });
+
+  document.querySelectorAll('section.block > .block-head').forEach(function(head){
+    head.addEventListener('click', function(){ head.parentElement.classList.toggle('open'); });
+  });
+
+  function setActiveNav(route){
+    document.querySelectorAll('.navchip').forEach(function(b){
+      b.classList.toggle('on', b.getAttribute('data-nav') === (route === 'dashboard' ? 'dashboard' : ''));
+    });
+  }
+
+  function render(){
+    var hash = location.hash.replace('#','');
+    if (hash === 'dashboard'){
+      hub.classList.remove('active'); groupView.classList.remove('active'); dashView.classList.add('active');
+      setActiveNav('dashboard');
+      renderDashboard();
+      return;
+    }
+    var g = findGroup(hash);
+    if (!g){
+      hub.classList.add('active'); groupView.classList.remove('active'); dashView.classList.remove('active');
+      setActiveNav('');
+      return;
+    }
+    hub.classList.remove('active'); dashView.classList.remove('active'); groupView.classList.add('active');
+    setActiveNav('');
+    gEyebrow.textContent = g.kind;
+    gTitle.textContent = g.name;
+    document.getElementById('g-canevas-pill').textContent = 'canevas-' + g.slug + '.pptx';
+    var dataPill = document.getElementById('g-data-pill');
+    dataPill.textContent = g.dataLabel;
+    gDataTitle.textContent = 'Données — ' + g.dataLabel;
+    gDataDesc.textContent = 'Fichier « ' + g.dataLabel + ' » de la région, à utiliser pour compléter le canevas pendant les travaux de groupe.';
+    gQr.src = 'files/qr-' + g.slug + '.png';
+    gQr.alt = 'QR code — Groupe ' + g.name;
+
+    buildBlockA(g);
+    buildBlockB(g);
+  }
+  window.addEventListener('hashchange', render);
+
+  // ================= BLOCK A : Synthèse régionale =================
+  function buildBlockA(g){
+    var key = 'pev_synthese_' + g.slug;
+    var data = lsGet(key, {completude:'', promptitude:'',
+      visites:{tPlan:'',hPlan:'',mPlan:'',fPlan:'',tReal:'',hReal:'',mReal:'',fReal:''},
+      cas:{}, forces:'', faiblesses:'', problemes:{}});
+    MEV_LIST.forEach(function(m){ if(!data.cas[m]) data.cas[m] = {notif:'', inv:''}; });
+    THEMES.forEach(function(t){ if(!data.problemes[t]) data.problemes[t] = {probleme:'', cause:'', action:''}; });
+
+    var html = '';
+    html += '<div class="subhead">Complétude &amp; promptitude des rapports (S1 2026)</div>';
+    html += '<div class="fieldgrid">' +
+      '<div class="field"><label>Taux de complétude (%)</label><input type="number" min="0" max="100" id="a-completude"></div>' +
+      '<div class="field"><label>Taux de promptitude (%)</label><input type="number" min="0" max="100" id="a-promptitude"></div>' +
+      '</div>';
+
+    html += '<div class="subhead">Taux de réalisation des visites de site par priorité</div>';
+    html += '<table class="matrix"><tr><th></th><th>Total</th><th>Haute priorité</th><th>Moyenne priorité</th><th>Faible priorité</th></tr>' +
+      '<tr><td class="theme">Planifié</td><td><input type="number" id="a-tPlan"></td><td><input type="number" id="a-hPlan"></td><td><input type="number" id="a-mPlan"></td><td><input type="number" id="a-fPlan"></td></tr>' +
+      '<tr><td class="theme">Réalisé</td><td><input type="number" id="a-tReal"></td><td><input type="number" id="a-hReal"></td><td><input type="number" id="a-mReal"></td><td><input type="number" id="a-fReal"></td></tr>' +
+      '</table><div class="pct-out" id="a-visites-pct"></div>';
+
+    html += '<div class="subhead">Cas notifiés et investigués (S1 2026)</div>';
+    html += '<table class="matrix"><tr><th>MEV</th><th>Notifiés</th><th>Investigués</th></tr>';
+    MEV_LIST.forEach(function(m, i){
+      html += '<tr><td class="theme">' + m + '</td><td><input type="number" id="a-mev-notif-' + i + '"></td><td><input type="number" id="a-mev-inv-' + i + '"></td></tr>';
+    });
+    html += '</table>';
+
+    html += '<div class="subhead">Forces &amp; faiblesses</div>';
+    html += '<div class="fieldgrid" style="grid-template-columns:1fr 1fr">' +
+      '<div class="field"><label>Forces (une par ligne)</label><textarea id="a-forces" rows="4"></textarea></div>' +
+      '<div class="field"><label>Faiblesses (une par ligne)</label><textarea id="a-faiblesses" rows="4"></textarea></div>' +
+      '</div>';
+
+    html += '<div class="subhead">Analyse des problèmes</div>';
+    html += '<table class="matrix"><tr><th>Thème</th><th>Problème(s)</th><th>Cause prioritaire</th><th>Action corrective</th></tr>';
+    THEMES.forEach(function(t, i){
+      html += '<tr><td class="theme">' + t + '</td>' +
+        '<td><textarea id="a-th-prob-' + i + '" rows="2"></textarea></td>' +
+        '<td><textarea id="a-th-cause-' + i + '" rows="2"></textarea></td>' +
+        '<td><textarea id="a-th-action-' + i + '" rows="2"></textarea></td></tr>';
+    });
+    html += '</table>';
+
+    html += '<div class="savebar">' +
+      '<button class="btn ghost sm" id="a-save">Enregistrer le brouillon</button>' +
+      '<button class="btn sm" id="a-send">Envoyer au facilitateur</button>' +
+      '<span class="status" id="a-status"></span>' +
+      '</div>';
+
+    document.getElementById('blockA-body').innerHTML = html;
+
+    function fill(){
+      document.getElementById('a-completude').value = data.completude;
+      document.getElementById('a-promptitude').value = data.promptitude;
+      ['tPlan','hPlan','mPlan','fPlan','tReal','hReal','mReal','fReal'].forEach(function(k){
+        document.getElementById('a-' + k).value = data.visites[k];
+      });
+      MEV_LIST.forEach(function(m, i){
+        document.getElementById('a-mev-notif-' + i).value = data.cas[m].notif;
+        document.getElementById('a-mev-inv-' + i).value = data.cas[m].inv;
+      });
+      document.getElementById('a-forces').value = data.forces;
+      document.getElementById('a-faiblesses').value = data.faiblesses;
+      THEMES.forEach(function(t, i){
+        document.getElementById('a-th-prob-' + i).value = data.problemes[t].probleme;
+        document.getElementById('a-th-cause-' + i).value = data.problemes[t].cause;
+        document.getElementById('a-th-action-' + i).value = data.problemes[t].action;
+      });
+      updateVisitesPct();
+    }
+    fill();
+
+    function updateVisitesPct(){
+      var tP = parseFloat(document.getElementById('a-tPlan').value) || 0;
+      var tR = parseFloat(document.getElementById('a-tReal').value) || 0;
+      var pct = tP > 0 ? Math.round((tR / tP) * 100) : null;
+      document.getElementById('a-visites-pct').textContent = pct === null ? '' : 'Taux de réalisation total : ' + pct + '%';
+    }
+    ['a-tPlan','a-tReal'].forEach(function(id){ document.getElementById(id).addEventListener('input', updateVisitesPct); });
+
+    function collect(){
+      data.completude = document.getElementById('a-completude').value;
+      data.promptitude = document.getElementById('a-promptitude').value;
+      ['tPlan','hPlan','mPlan','fPlan','tReal','hReal','mReal','fReal'].forEach(function(k){
+        data.visites[k] = document.getElementById('a-' + k).value;
+      });
+      MEV_LIST.forEach(function(m, i){
+        data.cas[m].notif = document.getElementById('a-mev-notif-' + i).value;
+        data.cas[m].inv = document.getElementById('a-mev-inv-' + i).value;
+      });
+      data.forces = document.getElementById('a-forces').value;
+      data.faiblesses = document.getElementById('a-faiblesses').value;
+      THEMES.forEach(function(t, i){
+        data.problemes[t].probleme = document.getElementById('a-th-prob-' + i).value;
+        data.problemes[t].cause = document.getElementById('a-th-cause-' + i).value;
+        data.problemes[t].action = document.getElementById('a-th-action-' + i).value;
+      });
+      return data;
+    }
+
+    document.getElementById('a-save').addEventListener('click', function(){
+      lsSet(key, collect());
+      var st = document.getElementById('a-status'); st.textContent = 'Brouillon enregistré sur cet appareil.';
+      setTimeout(function(){ st.textContent=''; }, 3000);
+    });
+
+    document.getElementById('a-send').addEventListener('click', function(){
+      var d = collect();
+      lsSet(key, d);
+      var lignes = [
+        'GROUPE : ' + g.name,
+        'TRAVAIL DE GROUPE 1 — SYNTHÈSE RÉGIONALE S1 2026',
+        '',
+        'Taux de complétude : ' + d.completude + '%',
+        'Taux de promptitude : ' + d.promptitude + '%',
+        '',
+        'Visites de site — Planifié (Total/Haute/Moyenne/Faible) : ' + [d.visites.tPlan,d.visites.hPlan,d.visites.mPlan,d.visites.fPlan].join(' / '),
+        'Visites de site — Réalisé (Total/Haute/Moyenne/Faible) : ' + [d.visites.tReal,d.visites.hReal,d.visites.mReal,d.visites.fReal].join(' / '),
+        ''
+      ];
+      lignes.push('Cas notifiés / investigués :');
+      MEV_LIST.forEach(function(m){ lignes.push('  ' + m + ' : notifiés ' + (d.cas[m].notif||'0') + ' / investigués ' + (d.cas[m].inv||'0')); });
+      lignes.push('');
+      lignes.push('Forces :'); lignes.push(d.forces || '(vide)');
+      lignes.push(''); lignes.push('Faiblesses :'); lignes.push(d.faiblesses || '(vide)');
+      lignes.push('');
+      lignes.push('Analyse des problèmes :');
+      THEMES.forEach(function(t){
+        var p = d.problemes[t];
+        if (p.probleme || p.cause || p.action){
+          lignes.push('  [' + t + '] Problème: ' + (p.probleme||'-') + ' | Cause: ' + (p.cause||'-') + ' | Action: ' + (p.action||'-'));
+        }
+      });
+      openMailto('Travail de groupe 1 - ' + g.name, lignes.join('\n'));
+    });
+  }
+
+  // ================= BLOCK B : Polio et autres MEV =================
+  function buildBlockB(g){
+    var key = 'pev_poliomev_' + g.slug;
+    var data = lsGet(key, {membres:'', lignes:PROBLEMES_FIXES.map(function(p){ return {probleme:p, cause:'', solution:''}; }), recommandations:''});
+    if (!data.lignes || data.lignes.length !== PROBLEMES_FIXES.length){
+      data.lignes = PROBLEMES_FIXES.map(function(p){ return {probleme:p, cause:'', solution:''}; });
+    }
+
+    var html = '';
+    html += '<div class="field"><label>Membres du groupe</label><textarea id="b-membres" rows="2" placeholder="Noms des participants"></textarea></div>';
+    html += '<table class="matrix"><tr><th>Problèmes</th><th>Causes</th><th>Solutions / Recommandations</th></tr>';
+    data.lignes.forEach(function(l, i){
+      html += '<tr><td class="theme">' + l.probleme + '</td>' +
+        '<td><textarea id="b-cause-' + i + '" rows="2"></textarea></td>' +
+        '<td><textarea id="b-sol-' + i + '" rows="2"></textarea></td></tr>';
+    });
+    html += '</table>';
+    html += '<div class="field" style="margin-top:14px"><label>Recommandations générales</label><textarea id="b-reco" rows="3"></textarea></div>';
+    html += '<div class="savebar">' +
+      '<button class="btn ghost sm" id="b-save">Enregistrer le brouillon</button>' +
+      '<button class="btn sm" id="b-send">Envoyer au facilitateur</button>' +
+      '<span class="status" id="b-status"></span>' +
+      '</div>';
+
+    document.getElementById('blockB-body').innerHTML = html;
+
+    document.getElementById('b-membres').value = data.membres;
+    data.lignes.forEach(function(l, i){
+      document.getElementById('b-cause-' + i).value = l.cause;
+      document.getElementById('b-sol-' + i).value = l.solution;
+    });
+    document.getElementById('b-reco').value = data.recommandations;
+
+    function collect(){
+      data.membres = document.getElementById('b-membres').value;
+      data.lignes.forEach(function(l, i){
+        l.cause = document.getElementById('b-cause-' + i).value;
+        l.solution = document.getElementById('b-sol-' + i).value;
+      });
+      data.recommandations = document.getElementById('b-reco').value;
+      return data;
+    }
+
+    document.getElementById('b-save').addEventListener('click', function(){
+      lsSet(key, collect());
+      var st = document.getElementById('b-status'); st.textContent = 'Brouillon enregistré sur cet appareil.';
+      setTimeout(function(){ st.textContent=''; }, 3000);
+    });
+
+    document.getElementById('b-send').addEventListener('click', function(){
+      var d = collect();
+      lsSet(key, d);
+      var lignes = [
+        'GROUPE : ' + g.name,
+        'TRAVAIL DE GROUPE 2 — SURVEILLANCE POLIO ET AUTRES MEV',
+        '',
+        'Membres : ' + (d.membres || '(non renseigné)'),
+        ''
+      ];
+      d.lignes.forEach(function(l){
+        if (l.cause || l.solution){
+          lignes.push('- ' + l.probleme);
+          lignes.push('  Cause : ' + (l.cause || '-'));
+          lignes.push('  Solution : ' + (l.solution || '-'));
+        }
+      });
+      lignes.push('');
+      lignes.push('Recommandations : ' + (d.recommandations || '(vide)'));
+      openMailto('Travail de groupe 2 (Polio-MEV) - ' + g.name, lignes.join('\n'));
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  // ================= DASHBOARD (100% local à cet appareil) =================
+  var REG_KEY = 'pev_dash_registrations';
+  var GROUPEDATA_KEY_PREFIX = 'pev_dash_groupe_';
+
+  function renderDashboard(){
+    var regs = lsGet(REG_KEY, []);
+    renderKpis(regs);
+    renderRegTable(regs);
+    buildDashGroupeForm(dashGroupeSelect.value || GROUPS[0].slug);
+  }
+
+  function renderKpis(regs){
+    var byGroupe = {};
+    regs.forEach(function(r){ byGroupe[r.groupe] = (byGroupe[r.groupe]||0) + 1; });
+    var kpiRow = document.getElementById('kpiRow');
+    var html = '<div class="kpi"><div class="n">' + regs.length + '</div><div class="l">Participants enregistrés</div></div>';
+    GROUPS.forEach(function(g){
+      html += '<div class="kpi"><div class="n">' + (byGroupe[g.slug]||0) + '</div><div class="l">' + g.name + '</div></div>';
+    });
+    kpiRow.innerHTML = html;
+  }
+
+  function renderRegTable(regs){
+    var t = document.getElementById('reg-table');
+    if (!regs.length){ t.innerHTML = '<tr><td class="empty" style="padding:10px 0">Aucun participant ajouté pour l\'instant.</td></tr>'; return; }
+    var rows = regs.slice().sort(function(a,b){ return (b.added_le||'') < (a.added_le||'') ? -1 : 1; });
+    var html = '<tr><th>Nom</th><th>Structure</th><th>Groupe</th><th></th></tr>';
+    rows.forEach(function(r){
+      var g = findGroup(r.groupe);
+      html += '<tr><td>' + escapeHtml(r.nom||'') + '</td><td>' + escapeHtml(r.structure||'') + '</td><td>' + (g?g.name:escapeHtml(r.groupe||'')) +
+        '</td><td><button class="rowdel" data-id="' + r.id + '">supprimer</button></td></tr>';
+    });
+    t.innerHTML = html;
+    t.querySelectorAll('.rowdel').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-id');
+        var arr = lsGet(REG_KEY, []).filter(function(r){ return r.id !== id; });
+        lsSet(REG_KEY, arr);
+        renderKpis(arr); renderRegTable(arr);
+      });
+    });
+  }
+
+  document.getElementById('reg-add').addEventListener('click', function(){
+    var st = document.getElementById('reg-status');
+    var nom = document.getElementById('reg-nom').value.trim();
+    var structure = document.getElementById('reg-structure').value.trim();
+    var groupe = document.getElementById('reg-groupe').value;
+    if (!nom){ st.textContent = 'Merci de saisir un nom.'; return; }
+    var arr = lsGet(REG_KEY, []);
+    arr.push({id:genId(), nom:nom, structure:structure, groupe:groupe, added_le:new Date().toISOString()});
+    lsSet(REG_KEY, arr);
+    document.getElementById('reg-nom').value = ''; document.getElementById('reg-structure').value = '';
+    st.textContent = 'Ajouté.';
+    setTimeout(function(){ st.textContent=''; }, 2000);
+    renderKpis(arr); renderRegTable(arr);
+  });
+
+  document.getElementById('reg-copy').addEventListener('click', function(){
+    var regs = lsGet(REG_KEY, []);
+    var lignes = ['LISTE DES INSCRITS — ATELIER PEV', ''];
+    GROUPS.forEach(function(g){
+      var members = regs.filter(function(r){ return r.groupe === g.slug; });
+      if (members.length){
+        lignes.push(g.name + ' (' + members.length + ')');
+        members.forEach(function(r){ lignes.push('  - ' + r.nom + (r.structure ? ' — ' + r.structure : '')); });
+        lignes.push('');
+      }
+    });
+    copyText(lignes.join('\n'), document.getElementById('reg-status'));
+  });
+
+  dashGroupeSelect.addEventListener('change', function(){ buildDashGroupeForm(dashGroupeSelect.value); });
+
+  function buildDashGroupeForm(slug){
+    var g = findGroup(slug);
+    var gkey = GROUPEDATA_KEY_PREFIX + slug;
+    var gdata = lsGet(gkey, {synthese:'', feedback:''});
+    var host = document.getElementById('dash-groupe-form');
+    host.innerHTML = '<div class="field"><label>Synthèse compilée (chiffres/points clés annoncés en plénière)</label><textarea id="dash-synth" rows="4" placeholder="Ex. Complétude 92%, promptitude 78%, 3 cas PFA investigués..."></textarea></div>' +
+      '<div class="field"><label>Feedback du facilitateur pour ' + g.name + '</label><textarea id="dash-feedback" rows="4" placeholder="Points forts, corrections attendues, prochaines étapes..."></textarea></div>' +
+      '<div class="savebar">' +
+      '<button class="btn sm" id="dash-save">Enregistrer</button>' +
+      '<button class="btn ghost sm" id="dash-copy">Copier le feedback pour l\'envoyer au groupe</button>' +
+      '<span class="status" id="dash-status"></span></div>' +
+      '<p class="note" style="margin-top:12px">Ce feedback reste sur cet appareil : utilisez « Copier » pour l\'envoyer par email/WhatsApp au groupe ou pour le lire en plénière.</p>';
+
+    document.getElementById('dash-synth').value = gdata.synthese || '';
+    document.getElementById('dash-feedback').value = gdata.feedback || '';
+
+    document.getElementById('dash-save').addEventListener('click', function(){
+      var st = document.getElementById('dash-status');
+      gdata.synthese = document.getElementById('dash-synth').value.trim();
+      gdata.feedback = document.getElementById('dash-feedback').value.trim();
+      lsSet(gkey, gdata);
+      st.textContent = 'Enregistré sur cet appareil.';
+      setTimeout(function(){ st.textContent=''; }, 3000);
+    });
+
+    document.getElementById('dash-copy').addEventListener('click', function(){
+      var text = 'FEEDBACK — ' + g.name + '\n\n' + (document.getElementById('dash-feedback').value.trim() || '(vide)');
+      copyText(text, document.getElementById('dash-status'));
+    });
+  }
+
+  render();
+})();
+</script>
