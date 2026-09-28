@@ -611,7 +611,7 @@
 
   function renderDashboard(){
     var local = lsGet(REG_KEY, []);
-    fetch('data/registrations.json', {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; }).then(function(official){
+    fetch('https://raw.githack.com/darar-hub/atelier-revue-semestrielle/main/data/registrations.json?t=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; }).then(function(official){
       (official||[]).forEach(function(r){ r.official = true; });
       var regs = (official||[]).concat(local);
       renderKpis(regs);
