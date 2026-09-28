@@ -251,13 +251,24 @@
     </section>
 
     <section class="block open">
-      <div class="block-head"><div><h3>Synthèse &amp; feedback par groupe</h3><div class="block-sub">Choisir un groupe pour saisir sa synthèse compilée et son feedback</div></div></div>
+      <div class="block-head"><div><h3>Synthèse &amp; feedback par groupe</h3><div class="block-sub">Choisir un groupe pour saisir sa synthèse compilée et son feedback — ou « Toutes les régions » pour la synthèse globale</div></div></div>
       <div class="block-body" style="display:block">
-        <div class="field" style="max-width:300px">
+        <div class="field" style="max-width:340px">
           <label>Groupe</label>
           <select id="dash-groupe"></select>
         </div>
         <div id="dash-groupe-form"></div>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><div><h3>Rapport global de l'activité</h3><div class="block-sub">Rédaction du rapport national de l'atelier, structuré selon les recommandations OMS pour la revue de surveillance</div></div><span class="chevron">›</span></div>
+      <div class="block-body">
+        <p class="note">Ce rapport reprend la structure recommandée par l'OMS pour un rapport de revue de surveillance (contexte, méthodologie, performances, problèmes, recommandations). Utilisez « Pré-remplir » pour reprendre automatiquement les synthèses déjà saisies par région comme point de départ, puis complétez et ajustez chaque section.</p>
+        <div class="savebar" style="margin-top:0 0 16px">
+          <button class="btn ghost sm" id="rpt-prefill">Pré-remplir à partir des synthèses régionales</button>
+        </div>
+        <div id="rpt-form"></div>
       </div>
     </section>
     </div>
@@ -346,6 +357,11 @@
 
   var regGroupeSelect = document.getElementById('reg-groupe');
   var dashGroupeSelect = document.getElementById('dash-groupe');
+  var ALL_SLUG = '__all__';
+  (function(){
+    var oAll = document.createElement('option'); oAll.value = ALL_SLUG; oAll.textContent = '★ Toutes les régions — synthèse globale';
+    dashGroupeSelect.appendChild(oAll);
+  })();
   GROUPS.forEach(function(g){
     var o1 = document.createElement('option'); o1.value = g.slug; o1.textContent = g.name; regGroupeSelect.appendChild(o1);
     var o2 = document.createElement('option'); o2.value = g.slug; o2.textContent = g.name; dashGroupeSelect.appendChild(o2);
@@ -738,11 +754,57 @@
 
   dashGroupeSelect.addEventListener('change', function(){ buildDashGroupeForm(dashGroupeSelect.value); });
 
+  function regionSynthesesText(){
+    var lignes = [];
+    GROUPS.forEach(function(g){
+      var gdata = lsGet(GROUPEDATA_KEY_PREFIX + g.slug, {synthese:'', feedback:''});
+      if (gdata.synthese && gdata.synthese.trim()){
+        lignes.push(g.name.toUpperCase() + '\n' + gdata.synthese.trim());
+      }
+    });
+    return lignes.join('\n\n');
+  }
+
   function buildDashGroupeForm(slug){
+    var host = document.getElementById('dash-groupe-form');
+
+    if (slug === ALL_SLUG){
+      var akey = GROUPEDATA_KEY_PREFIX + 'ALL';
+      var adata = lsGet(akey, {synthese:''});
+      var recap = regionSynthesesText();
+      host.innerHTML = '<p class="note">Vue d\'ensemble, tous groupes confondus : rassemblez ici les points communs, tendances et priorités qui ressortent des synthèses régionales, pour la restitution en plénière et pour alimenter le rapport global ci-dessous.</p>' +
+        '<div class="field"><label>Synthèse globale — toutes les régions</label><textarea id="dash-all-synth" rows="7" placeholder="Ex. Tendances communes, régions en avance/en difficulté, priorités nationales pour le 2e semestre..."></textarea></div>' +
+        '<div class="savebar">' +
+        '<button class="btn sm" id="dash-all-save">Enregistrer</button>' +
+        '<button class="btn ghost sm" id="dash-all-fill">Reprendre les synthèses régionales déjà saisies</button>' +
+        '<button class="btn ghost sm" id="dash-all-copy">Copier</button>' +
+        '<span class="status" id="dash-all-status"></span></div>' +
+        (recap ? '<div class="subhead">Rappel — synthèses saisies par région</div><div class="feedbox">' + escapeHtml(recap) + '</div>' : '<p class="note" style="margin-top:12px">Aucune synthèse régionale saisie pour l\'instant — sélectionnez une région ci-dessus pour commencer.</p>');
+
+      document.getElementById('dash-all-synth').value = adata.synthese || '';
+
+      document.getElementById('dash-all-save').addEventListener('click', function(){
+        var st = document.getElementById('dash-all-status');
+        adata.synthese = document.getElementById('dash-all-synth').value.trim();
+        lsSet(akey, adata);
+        st.textContent = 'Enregistré sur cet appareil.';
+        setTimeout(function(){ st.textContent=''; }, 3000);
+      });
+      document.getElementById('dash-all-fill').addEventListener('click', function(){
+        var ta = document.getElementById('dash-all-synth');
+        var recap2 = regionSynthesesText();
+        ta.value = (ta.value.trim() ? ta.value.trim() + '\n\n' : '') + (recap2 || '(aucune synthèse régionale saisie pour l\'instant)');
+      });
+      document.getElementById('dash-all-copy').addEventListener('click', function(){
+        var text = 'SYNTHÈSE GLOBALE — TOUTES LES RÉGIONS\n\n' + (document.getElementById('dash-all-synth').value.trim() || '(vide)');
+        copyText(text, document.getElementById('dash-all-status'));
+      });
+      return;
+    }
+
     var g = findGroup(slug);
     var gkey = GROUPEDATA_KEY_PREFIX + slug;
     var gdata = lsGet(gkey, {synthese:'', feedback:''});
-    var host = document.getElementById('dash-groupe-form');
     host.innerHTML = '<div class="field"><label>Synthèse compilée (chiffres/points clés annoncés en plénière)</label><textarea id="dash-synth" rows="4" placeholder="Ex. Complétude 92%, promptitude 78%, 3 cas PFA investigués..."></textarea></div>' +
       '<div class="field"><label>Feedback du facilitateur pour ' + g.name + '</label><textarea id="dash-feedback" rows="4" placeholder="Points forts, corrections attendues, prochaines étapes..."></textarea></div>' +
       '<div class="savebar">' +
@@ -768,6 +830,73 @@
       copyText(text, document.getElementById('dash-status'));
     });
   }
+
+  // ================= RAPPORT GLOBAL DE L'ACTIVITÉ (national, structure OMS) =================
+  var REPORT_KEY = 'pev_dash_rapport_global';
+  var REPORT_SECTIONS = [
+    {id:'resume', label: "Résumé exécutif", rows:4, ph:"En quelques lignes : ce que l'atelier a permis d'établir et les décisions clés retenues."},
+    {id:'contexte', label:"Contexte et objectifs", rows:4, ph:"Contexte de la surveillance des MEV à Djibouti, objectifs de l'atelier, participants et dates."},
+    {id:'methodo', label:"Méthodologie", rows:4, ph:"Déroulement de l'atelier : sessions plénières, travaux de groupe par région, sources de données utilisées."},
+    {id:'performances', label:"Performances de la surveillance (indicateurs clés)", rows:6, ph:"Indicateurs PFA, rougeole/rubéole et autres MEV pour le semestre écoulé, comparés aux normes OMS/nationales, par région."},
+    {id:'problemes', label:"Problèmes et défis identifiés", rows:5, ph:"Principaux problèmes relevés (détection, transport des échantillons, qualité des données, archivage...) et leurs causes."},
+    {id:'alertes', label:"Alertes en cours et mesures prises", rows:4, ph:"Alertes ouvertes au moment de l'atelier, investigations en cours, mesures de riposte."},
+    {id:'recommandations', label:"Plan d'action et recommandations", rows:6, ph:"Recommandations et actions priorisées pour le semestre à venir, avec responsables et échéances."},
+    {id:'conclusion', label:"Conclusion", rows:3, ph:"Synthèse finale et engagement des parties prenantes pour la mise en œuvre."}
+  ];
+
+  function buildReportForm(){
+    var host = document.getElementById('rpt-form');
+    var data = lsGet(REPORT_KEY, {});
+    var html = '';
+    REPORT_SECTIONS.forEach(function(s){
+      html += '<div class="field"><label>' + s.label + '</label><textarea id="rpt-' + s.id + '" rows="' + s.rows + '" placeholder="' + s.ph + '"></textarea></div>';
+    });
+    html += '<div class="savebar">' +
+      '<button class="btn sm" id="rpt-save">Enregistrer</button>' +
+      '<button class="btn ghost sm" id="rpt-copy">Copier le rapport complet</button>' +
+      '<span class="status" id="rpt-status"></span></div>' +
+      '<p class="note" style="margin-top:12px">Ce rapport reste sur cet appareil. Utilisez « Copier le rapport complet » pour le coller dans un document Word/PDF à transmettre au niveau national et à l\'OMS.</p>';
+    host.innerHTML = html;
+
+    REPORT_SECTIONS.forEach(function(s){
+      document.getElementById('rpt-' + s.id).value = data[s.id] || '';
+    });
+
+    document.getElementById('rpt-save').addEventListener('click', function(){
+      var st = document.getElementById('rpt-status');
+      var out = {};
+      REPORT_SECTIONS.forEach(function(s){ out[s.id] = document.getElementById('rpt-' + s.id).value.trim(); });
+      lsSet(REPORT_KEY, out);
+      st.textContent = 'Enregistré sur cet appareil.';
+      setTimeout(function(){ st.textContent=''; }, 3000);
+    });
+
+    document.getElementById('rpt-copy').addEventListener('click', function(){
+      var lignes = ['RAPPORT DE L\'ATELIER DE REVUE SEMESTRIELLE DE LA SURVEILLANCE — PEV DJIBOUTI', 'Djibouti ville · 30 septembre – 1er octobre 2026', ''];
+      REPORT_SECTIONS.forEach(function(s, i){
+        lignes.push((i+1) + '. ' + s.label.toUpperCase());
+        lignes.push(document.getElementById('rpt-' + s.id).value.trim() || '(à compléter)');
+        lignes.push('');
+      });
+      copyText(lignes.join('\n'), document.getElementById('rpt-status'));
+    });
+  }
+
+  document.getElementById('rpt-prefill').addEventListener('click', function(){
+    var akey = GROUPEDATA_KEY_PREFIX + 'ALL';
+    var adata = lsGet(akey, {synthese:''});
+    var recap = regionSynthesesText();
+    var perfField = document.getElementById('rpt-performances');
+    var filler = (adata.synthese ? adata.synthese.trim() + '\n\n' : '') + (recap || '');
+    if (filler.trim()){
+      perfField.value = (perfField.value.trim() ? perfField.value.trim() + '\n\n' : '') + filler.trim();
+    }
+    var st = document.getElementById('rpt-status');
+    st.textContent = filler.trim() ? 'Synthèses reprises dans « Performances de la surveillance ».' : 'Aucune synthèse enregistrée pour l\'instant.';
+    setTimeout(function(){ st.textContent=''; }, 3500);
+  });
+
+  buildReportForm();
 
   render();
 })();
