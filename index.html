@@ -137,7 +137,6 @@
     <p class="intro">Chaque groupe scanne le QR code de sa table (ou clique sur sa carte) pour retrouver son canevas, remplir ses travaux de groupe et transmettre ses résultats au facilitateur. Aucune connexion ou compte n'est nécessaire : tout fonctionne directement dans le navigateur.</p>
     <div class="navrow">
       <button class="navchip" data-nav="">Groupes de travail</button>
-      <button class="navchip" data-nav="dashboard">Espace facilitateur</button>
     </div>
   </header>
 
@@ -208,12 +207,28 @@
 
   <main id="dashboard" class="view">
     <button class="backlink" id="backBtn2">&larr; Tous les groupes</button>
-    <span class="eyebrow">Outil du facilitateur</span>
-    <h2 style="margin-top:6px;">Espace facilitateur — synthèse &amp; feedback</h2>
-    <p class="intro" style="margin-top:8px;">Compilez ici, en direct pendant la plénière, les résultats annoncés par chaque groupe. Tout est enregistré directement sur cet appareil — aucune connexion ni compte n'est requis.</p>
-    <p class="deviceNote">Ces données restent sur cet appareil (ce téléphone/cet ordinateur) : utilisez toujours le même pour les retrouver. Le bouton « Copier » permet de partager un résumé par email/WhatsApp ou de le projeter.</p>
 
-    <div class="kpi-row" id="kpiRow"></div>
+    <div id="dash-locked" style="max-width:360px; margin-top:20px;">
+      <span class="eyebrow">Accès restreint</span>
+      <h2 style="margin-top:6px;">Espace facilitateur</h2>
+      <p class="intro" style="margin-top:8px;">Réservé au facilitateur et aux personnes qu'il valide. Saisissez le code d'accès.</p>
+      <div class="field" style="margin-top:16px;">
+        <label>Code d'accès</label>
+        <input type="password" id="dash-pin" inputmode="numeric" placeholder="••••••">
+      </div>
+      <div class="savebar">
+        <button class="btn sm" id="dash-pin-submit">Accéder</button>
+        <span class="status" id="dash-pin-status"></span>
+      </div>
+    </div>
+
+    <div id="dash-content" style="display:none">
+      <span class="eyebrow">Outil du facilitateur</span>
+      <h2 style="margin-top:6px;">Espace facilitateur — synthèse &amp; feedback</h2>
+      <p class="intro" style="margin-top:8px;">Compilez ici, en direct pendant la plénière, les résultats annoncés par chaque groupe. Tout est enregistré directement sur cet appareil — aucune connexion ni compte n'est requis.</p>
+      <p class="deviceNote">Ces données restent sur cet appareil (ce téléphone/cet ordinateur) : utilisez toujours le même pour les retrouver. Le bouton « Copier » permet de partager un résumé par email/WhatsApp ou de le projeter.</p>
+
+      <div class="kpi-row" id="kpiRow"></div>
 
     <section class="block open">
       <div class="block-head"><div><h3>Inscriptions</h3><div class="block-sub">Ajouter un participant enregistré (à partir des emails reçus ou du check-in)</div></div></div>
@@ -244,6 +259,7 @@
         <div id="dash-groupe-form"></div>
       </div>
     </section>
+    </div>
   </main>
 
   <footer>Programme Élargi de Vaccination — République de Djibouti</footer>
@@ -260,6 +276,8 @@
     {slug:"djibouti-ville", name:"Djibouti Ville", kind:"Points focaux FOSA", dataLabel:"Outil_vierge_bon.xls"}
   ];
   var DEST_EMAIL = 'hyusef@gmail.com';
+  var FACILITATOR_PIN = '123456';
+  var FAC_AUTH_KEY = 'pev_fac_auth';
   var THEMES = ["Réalisation de visites sur site","Détection des cas","Investigation des cas","Logistique","Communication et retour d'information","Collecte et interprétation des données","Personnel","Rapports mensuels"];
   var MEV_LIST = ["PFA","Rougeole/Rubéole","TNN","Fièvre Jaune","MAPI","Autres (préciser)"];
   var PROBLEMES_FIXES = [
@@ -357,12 +375,47 @@
     });
   }
 
+  var dashLocked = document.getElementById('dash-locked');
+  var dashContent = document.getElementById('dash-content');
+  var dashPin = document.getElementById('dash-pin');
+  var dashPinSubmit = document.getElementById('dash-pin-submit');
+  var dashPinStatus = document.getElementById('dash-pin-status');
+
+  function checkDashAuth(){
+    if (localStorage.getItem(FAC_AUTH_KEY) === 'ok'){
+      dashLocked.style.display = 'none';
+      dashContent.style.display = 'block';
+      renderDashboard();
+    } else {
+      dashLocked.style.display = 'block';
+      dashContent.style.display = 'none';
+      dashPin.value = '';
+      dashPinStatus.textContent = '';
+      setTimeout(function(){ dashPin.focus(); }, 0);
+    }
+  }
+
+  function tryDashUnlock(){
+    if (dashPin.value.trim() === FACILITATOR_PIN){
+      localStorage.setItem(FAC_AUTH_KEY, 'ok');
+      checkDashAuth();
+    } else {
+      dashPinStatus.textContent = 'Code incorrect.';
+      dashPinStatus.style.color = 'var(--danger)';
+    }
+  }
+
+  dashPinSubmit.addEventListener('click', tryDashUnlock);
+  dashPin.addEventListener('keydown', function(e){
+    if (e.key === 'Enter'){ e.preventDefault(); tryDashUnlock(); }
+  });
+
   function render(){
     var hash = location.hash.replace('#','');
     if (hash === 'dashboard'){
       hub.classList.remove('active'); groupView.classList.remove('active'); dashView.classList.add('active');
       setActiveNav('dashboard');
-      renderDashboard();
+      checkDashAuth();
       return;
     }
     var g = findGroup(hash);
