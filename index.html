@@ -1,5 +1,6 @@
 <title>Groupes Atelier PEV</title>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -605,7 +606,8 @@
 
     html += '<div class="savebar">' +
       '<button class="btn ghost sm" id="a-save">Enregistrer le brouillon</button>' +
-      '<button class="btn sm" id="a-send">Envoyer au facilitateur</button>' +
+      '<button class="btn sm" id="a-excel">Télécharger en Excel</button>' +
+      '<button class="btn ghost sm" id="a-send">Envoyer au facilitateur (texte)</button>' +
       '<span class="status" id="a-status"></span>' +
       '</div>';
 
@@ -666,6 +668,43 @@
       setTimeout(function(){ st.textContent=''; }, 3000);
     });
 
+    document.getElementById('a-excel').addEventListener('click', function(){
+      var st = document.getElementById('a-status');
+      if (typeof XLSX === 'undefined'){ st.textContent = "Le module Excel n'a pas pu se charger — vérifiez la connexion internet et réessayez."; return; }
+      var d = collect();
+      lsSet(key, d);
+      var rows = [
+        ['GROUPE', g.name],
+        ['TRAVAIL DE GROUPE 1 — SYNTHÈSE RÉGIONALE S1 2026', ''],
+        [],
+        ['Taux de complétude (%)', d.completude],
+        ['Taux de promptitude (%)', d.promptitude],
+        [],
+        ['Visites de site', 'Total', 'Haute priorité', 'Moyenne priorité', 'Faible priorité'],
+        ['Planifié', d.visites.tPlan, d.visites.hPlan, d.visites.mPlan, d.visites.fPlan],
+        ['Réalisé', d.visites.tReal, d.visites.hReal, d.visites.mReal, d.visites.fReal],
+        [],
+        ['MEV', 'Notifiés', 'Investigués']
+      ];
+      MEV_LIST.forEach(function(m){ rows.push([m, d.cas[m].notif, d.cas[m].inv]); });
+      rows.push([]);
+      rows.push(['Forces', d.forces || '']);
+      rows.push(['Faiblesses', d.faiblesses || '']);
+      rows.push([]);
+      rows.push(['Thème', 'Problème', 'Cause prioritaire', 'Action corrective']);
+      THEMES.forEach(function(t){
+        var p = d.problemes[t];
+        rows.push([t, p.probleme || '', p.cause || '', p.action || '']);
+      });
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{wch:32},{wch:28},{wch:28},{wch:28}];
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Groupe 1');
+      XLSX.writeFile(wb, g.slug + '_Groupe1_' + g.name.replace(/\s+/g,'_') + '.xlsx');
+      st.textContent = 'Fichier Excel téléchargé.';
+      setTimeout(function(){ st.textContent=''; }, 3000);
+    });
+
     document.getElementById('a-send').addEventListener('click', function(){
       var d = collect();
       lsSet(key, d);
@@ -717,7 +756,8 @@
     html += '<div class="field" style="margin-top:14px"><label>Recommandations générales</label><textarea id="b-reco" rows="3"></textarea></div>';
     html += '<div class="savebar">' +
       '<button class="btn ghost sm" id="b-save">Enregistrer le brouillon</button>' +
-      '<button class="btn sm" id="b-send">Envoyer au facilitateur</button>' +
+      '<button class="btn sm" id="b-excel">Télécharger en Excel</button>' +
+      '<button class="btn ghost sm" id="b-send">Envoyer au facilitateur (texte)</button>' +
       '<span class="status" id="b-status"></span>' +
       '</div>';
 
@@ -743,6 +783,31 @@
     document.getElementById('b-save').addEventListener('click', function(){
       lsSet(key, collect());
       var st = document.getElementById('b-status'); st.textContent = 'Brouillon enregistré sur cet appareil.';
+      setTimeout(function(){ st.textContent=''; }, 3000);
+    });
+
+    document.getElementById('b-excel').addEventListener('click', function(){
+      var st = document.getElementById('b-status');
+      if (typeof XLSX === 'undefined'){ st.textContent = "Le module Excel n'a pas pu se charger — vérifiez la connexion internet et réessayez."; return; }
+      var d = collect();
+      lsSet(key, d);
+      var rows = [
+        ['GROUPE', g.name],
+        ['TRAVAIL DE GROUPE 2 — SURVEILLANCE POLIO ET AUTRES MEV', ''],
+        [],
+        ['Membres du groupe', d.membres || ''],
+        [],
+        ['Problème', 'Cause', 'Solution / Recommandation']
+      ];
+      d.lignes.forEach(function(l){ rows.push([l.probleme, l.cause || '', l.solution || '']); });
+      rows.push([]);
+      rows.push(['Recommandations générales', d.recommandations || '']);
+      var ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = [{wch:45},{wch:35},{wch:35}];
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Groupe 2');
+      XLSX.writeFile(wb, g.slug + '_Groupe2_' + g.name.replace(/\s+/g,'_') + '.xlsx');
+      st.textContent = 'Fichier Excel téléchargé.';
       setTimeout(function(){ st.textContent=''; }, 3000);
     });
 
