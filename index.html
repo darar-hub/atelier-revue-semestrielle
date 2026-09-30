@@ -1,4 +1,5 @@
 <title>Groupes Atelier PEV</title>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -182,6 +183,17 @@
       </div>
     </div>
     <p class="note">Ces deux fichiers sont remis par le facilitateur sur la tablette/ordinateur du groupe (ou disponibles dans le dossier partagé de l'atelier). Les deux blocs ci-dessous permettent de saisir vos résultats directement au téléphone/tablette et de les transmettre au facilitateur — sans connexion ni compte.</p>
+
+    <section class="block open" id="blockFile">
+      <div class="block-head">
+        <div>
+          <h3>Envoyer un fichier (rapport rempli hors-ligne)</h3>
+          <div class="block-sub">Si vous avez rempli et enregistré le rapport (Word / Excel / PowerPoint / PDF) sur votre appareil, envoyez-le directement ici</div>
+        </div>
+        <span class="chevron">&rsaquo;</span>
+      </div>
+      <div class="block-body" id="blockFile-body"></div>
+    </section>
 
     <section class="block" id="blockA">
       <div class="block-head">
@@ -453,10 +465,89 @@
     gQr.src = 'files/qr-' + g.slug + '.png';
     gQr.alt = 'QR code — Groupe ' + g.name;
 
+    buildBlockFile(g);
     buildBlockA(g);
     buildBlockB(g);
   }
   window.addEventListener('hashchange', render);
+
+  // ================= FICHIERS (rapports remplis hors-ligne) =================
+  var FILES_KEY_PREFIX = 'pev_dash_files_';
+  function getGroupFiles(slug){ return lsGet(FILES_KEY_PREFIX + slug, []); }
+  function setGroupFiles(slug, arr){ lsSet(FILES_KEY_PREFIX + slug, arr); }
+  function readFileAsDataURL(file){
+    return new Promise(function(resolve, reject){
+      var reader = new FileReader();
+      reader.onload = function(){ resolve(reader.result); };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+  function dataURLtoBlob(dataUrl){
+    var parts = dataUrl.split(',');
+    var mime = (parts[0].match(/:(.*?);/) || [,'application/octet-stream'])[1];
+    var bin = atob(parts[1]);
+    var arr = new Uint8Array(bin.length);
+    for (var i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], {type:mime});
+  }
+  function formatSize(bytes){
+    if (!bytes) return '0 o';
+    if (bytes < 1024) return bytes + ' o';
+    if (bytes < 1024*1024) return Math.round(bytes/1024) + ' Ko';
+    return (bytes/1024/1024).toFixed(1) + ' Mo';
+  }
+  function downloadDataUrl(dataUrl, filename){
+    var a = document.createElement('a');
+    a.href = dataUrl; a.download = filename;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  }
+
+  // Widget côté groupe : envoyer un fichier (Word/Excel/PPT/PDF) au facilitateur.
+  // mailto: ne peut pas joindre de fichier automatiquement (limitation des navigateurs) —
+  // on utilise donc en priorité le partage natif (navigator.share), qui permet de joindre
+  // le fichier directement dans Gmail/Mail/WhatsApp sur mobile, avec un repli mailto + rappel.
+  function buildBlockFile(g){
+    var html = '';
+    html += '<p class="note">Votre navigateur ne peut pas joindre automatiquement un fichier à un e-mail. Le bouton ci-dessous ouvre le partage de votre appareil (choisissez Gmail/Mail/WhatsApp : le fichier sera joint automatiquement) ; si ce n\'est pas disponible, un e-mail s\'ouvrira et il faudra joindre le fichier vous-même avant d\'envoyer.</p>';
+    html += '<div class="fieldgrid">' +
+      '<div class="field"><label>Type de travail</label><select id="file-kind">' +
+        '<option value="1">Travail de groupe 1 — Synthèse régionale</option>' +
+        '<option value="2">Travail de groupe 2 — Polio et autres MEV</option>' +
+      '</select></div>' +
+      '<div class="field"><label>Fichier (Word / Excel / PowerPoint / PDF)</label>' +
+        '<input type="file" id="file-input" accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,.odt,.ods"></div>' +
+      '</div>';
+    html += '<div class="savebar">' +
+      '<button class="btn sm" id="file-send">Envoyer le fichier au facilitateur</button>' +
+      '<span class="status" id="file-status"></span>' +
+      '</div>';
+    document.getElementById('blockFile-body').innerHTML = html;
+
+    document.getElementById('file-send').addEventListener('click', function(){
+      var st = document.getElementById('file-status');
+      var input = document.getElementById('file-input');
+      var file = input.files && input.files[0];
+      if (!file){ st.textContent = 'Merci de sélectionner un fichier.'; return; }
+      var kind = document.getElementById('file-kind').value;
+      var kindLabel = kind === '2' ? 'Travail de groupe 2 (Polio-MEV)' : 'Travail de groupe 1';
+      var subject = kindLabel + ' - ' + g.name + ' (fichier)';
+      var reminder = 'Groupe : ' + g.name + '\nFichier : ' + file.name + '\n\n⚠️ Vérifiez que le fichier « ' + file.name + ' » est bien joint avant d\'envoyer cet e-mail.';
+
+      function fallbackMailto(){
+        openMailto(subject, reminder);
+        st.textContent = 'E-mail ouvert — n\'oubliez pas de joindre manuellement le fichier « ' + file.name + ' ».';
+      }
+
+      if (navigator.canShare && navigator.canShare({files:[file]})){
+        navigator.share({files:[file], title:subject, text:'Groupe : ' + g.name + ' — ' + kindLabel})
+          .then(function(){ st.textContent = 'Fenêtre de partage ouverte — choisissez votre messagerie ou WhatsApp.'; })
+          .catch(function(err){ if (err && err.name === 'AbortError'){ st.textContent = ''; } else { fallbackMailto(); } });
+      } else {
+        fallbackMailto();
+      }
+    });
+  }
 
   // ================= BLOCK A : Synthèse régionale =================
   function buildBlockA(g){
@@ -793,7 +884,10 @@
         '<button class="btn ghost sm" id="dash-all-fill">Reprendre les synthèses régionales déjà saisies</button>' +
         '<button class="btn ghost sm" id="dash-all-copy">Copier</button>' +
         '<span class="status" id="dash-all-status"></span></div>' +
-        (recap ? '<div class="subhead">Rappel — synthèses saisies par région</div><div class="feedbox">' + escapeHtml(recap) + '</div>' : '<p class="note" style="margin-top:12px">Aucune synthèse régionale saisie pour l\'instant — sélectionnez une région ci-dessus pour commencer.</p>');
+        (recap ? '<div class="subhead">Rappel — synthèses saisies par région</div><div class="feedbox">' + escapeHtml(recap) + '</div>' : '<p class="note" style="margin-top:12px">Aucune synthèse régionale saisie pour l\'instant — sélectionnez une région ci-dessus pour commencer.</p>') +
+        '<div class="subhead" style="margin-top:20px">Fichiers reçus des régions</div>' +
+        '<p class="note">Fusionne en une seule archive tous les fichiers de rapport (Word/Excel/PDF) importés ci-dessous, région par région — pratique pour tout récupérer d\'un coup ou transmettre au niveau national.</p>' +
+        '<div class="savebar"><button class="btn ghost sm" id="dash-all-zip">Télécharger tous les fichiers reçus (.zip)</button><span class="status" id="dash-all-zip-status"></span></div>';
 
       document.getElementById('dash-all-synth').value = adata.synthese || '';
 
@@ -813,6 +907,32 @@
         var text = 'SYNTHÈSE GLOBALE — TOUTES LES RÉGIONS\n\n' + (document.getElementById('dash-all-synth').value.trim() || '(vide)');
         copyText(text, document.getElementById('dash-all-status'));
       });
+      document.getElementById('dash-all-zip').addEventListener('click', function(){
+        var st = document.getElementById('dash-all-zip-status');
+        if (typeof JSZip === 'undefined'){ st.textContent = "Le module ZIP n'a pas pu se charger — vérifiez la connexion internet et réessayez."; return; }
+        var zip = new JSZip();
+        var total = 0;
+        GROUPS.forEach(function(gr){
+          var files = getGroupFiles(gr.slug);
+          if (!files.length) return;
+          var folder = zip.folder(gr.slug);
+          files.forEach(function(f){
+            var kindLabel = f.kind === '2' ? 'groupe2' : 'groupe1';
+            folder.file('[' + kindLabel + '] ' + f.name, dataURLtoBlob(f.dataUrl));
+            total++;
+          });
+        });
+        if (!total){ st.textContent = "Aucun fichier importé pour l'instant — importez d'abord les fichiers région par région."; return; }
+        st.textContent = 'Préparation de l\'archive…';
+        zip.generateAsync({type:'blob'}).then(function(blob){
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url; a.download = 'rapports-groupes-' + new Date().toISOString().slice(0,10) + '.zip';
+          document.body.appendChild(a); a.click(); document.body.removeChild(a);
+          setTimeout(function(){ URL.revokeObjectURL(url); }, 5000);
+          st.textContent = total + ' fichier(s) téléchargé(s) en une archive .zip.';
+        }).catch(function(){ st.textContent = "Erreur lors de la génération de l'archive."; });
+      });
       return;
     }
 
@@ -825,7 +945,15 @@
       '<button class="btn sm" id="dash-save">Enregistrer</button>' +
       '<button class="btn ghost sm" id="dash-copy">Copier le feedback pour l\'envoyer au groupe</button>' +
       '<span class="status" id="dash-status"></span></div>' +
-      '<p class="note" style="margin-top:12px">Ce feedback reste sur cet appareil : utilisez « Copier » pour l\'envoyer par email/WhatsApp au groupe ou pour le lire en plénière.</p>';
+      '<p class="note" style="margin-top:12px">Ce feedback reste sur cet appareil : utilisez « Copier » pour l\'envoyer par email/WhatsApp au groupe ou pour le lire en plénière.</p>' +
+      '<div class="subhead" style="margin-top:20px">Rapports reçus (fichiers) — ' + g.name + '</div>' +
+      '<p class="note">Si le groupe n\'a pas pu envoyer le fichier directement depuis l\'application, importez ici le fichier reçu (email, WhatsApp, clé USB...) pour le conserver sur cet appareil, le retélécharger, ou le fusionner avec les autres régions (bouton ZIP dans « Toutes les régions »).</p>' +
+      '<div class="fieldgrid">' +
+        '<div class="field"><label>Travail</label><select id="gf-kind"><option value="1">Travail de groupe 1</option><option value="2">Travail de groupe 2</option></select></div>' +
+        '<div class="field"><label>Fichier reçu</label><input type="file" id="gf-input"></div>' +
+      '</div>' +
+      '<div class="savebar"><button class="btn ghost sm" id="gf-import">Importer sur cet appareil</button><span class="status" id="gf-status"></span></div>' +
+      '<div id="gf-list">' + fileListHtml(slug) + '</div>';
 
     document.getElementById('dash-synth').value = gdata.synthese || '';
     document.getElementById('dash-feedback').value = gdata.feedback || '';
@@ -842,6 +970,53 @@
     document.getElementById('dash-copy').addEventListener('click', function(){
       var text = 'FEEDBACK — ' + g.name + '\n\n' + (document.getElementById('dash-feedback').value.trim() || '(vide)');
       copyText(text, document.getElementById('dash-status'));
+    });
+
+    document.getElementById('gf-import').addEventListener('click', function(){
+      var st = document.getElementById('gf-status');
+      var input = document.getElementById('gf-input');
+      var file = input.files && input.files[0];
+      if (!file){ st.textContent = 'Sélectionnez un fichier.'; return; }
+      var kind = document.getElementById('gf-kind').value;
+      st.textContent = 'Import en cours…';
+      readFileAsDataURL(file).then(function(dataUrl){
+        var files = getGroupFiles(slug);
+        files.push({id:genId(), name:file.name, size:file.size, type:file.type, kind:kind, addedLe:new Date().toISOString(), dataUrl:dataUrl});
+        setGroupFiles(slug, files);
+        buildDashGroupeForm(slug);
+      }).catch(function(){ st.textContent = "Erreur lors de l'import de ce fichier."; });
+    });
+
+    wireFileListButtons(slug);
+  }
+
+  function fileListHtml(slug){
+    var files = getGroupFiles(slug);
+    if (!files.length) return '<p class="note">Aucun fichier importé pour l\'instant.</p>';
+    var html = '<table class="dash" style="margin-top:10px"><tr><th>Fichier</th><th>Travail</th><th>Importé le</th><th></th></tr>';
+    files.forEach(function(f){
+      var kindLabel = f.kind === '2' ? 'Groupe 2' : 'Groupe 1';
+      var d = new Date(f.addedLe);
+      html += '<tr><td>' + escapeHtml(f.name) + ' <span class="note" style="display:inline">(' + formatSize(f.size) + ')</span></td><td>' + kindLabel + '</td><td>' + d.toLocaleString('fr-FR') + '</td>' +
+        '<td><button class="rowdel" data-dl="' + f.id + '">télécharger</button> <button class="rowdel" data-del="' + f.id + '">supprimer</button></td></tr>';
+    });
+    html += '</table>';
+    return html;
+  }
+
+  function wireFileListButtons(slug){
+    document.querySelectorAll('#gf-list [data-dl]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var f = getGroupFiles(slug).filter(function(x){ return x.id === btn.getAttribute('data-dl'); })[0];
+        if (f) downloadDataUrl(f.dataUrl, f.name);
+      });
+    });
+    document.querySelectorAll('#gf-list [data-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        var id = btn.getAttribute('data-del');
+        setGroupFiles(slug, getGroupFiles(slug).filter(function(x){ return x.id !== id; }));
+        buildDashGroupeForm(slug);
+      });
     });
   }
 
