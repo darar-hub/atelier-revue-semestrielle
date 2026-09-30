@@ -12,5 +12,9 @@
   {"nom": "Mouhyadine Nour Daher", "structure": "Croissant-Rouge", "groupe": "djibouti-ville"},
   {"nom": "Houssein Y Darar", "structure": "OMS", "groupe": "djibouti-ville"},
   {"nom": "Mohamed Abdi Fatah", "structure": "Ministère de la Santé – PEV", "groupe": "ali-sabieh"},
-  {"nom": "Ibirota Mhassan", "structure": "Ministère de la Santé – Polyclinique Arhiba", "groupe": "djibouti-ville"}
+  {"nom": "Ibirota Mhassan", "structure": "Ministère de la Santé – Polyclinique Arhiba", "groupe": "djibouti-ville"},
+  {"nom": "Ilhan Abdoulkader", "structure": "Ministère de la Santé – PK12", "groupe": "djibouti-ville"},
+  {"nom": "Neima Farah Hared", "structure": "CNSS", "groupe": "djibouti-ville"},
+  {"nom": "Bachir Hassan", "structure": "CNSS", "groupe": "djibouti-ville"},
+  {"nom": "Kaltoum Hassan Omar", "structure": "Ministère de la Santé – PEV", "groupe": "djibouti-ville"}
 ]
