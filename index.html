@@ -509,7 +509,7 @@
   // le fichier directement dans Gmail/Mail/WhatsApp sur mobile, avec un repli mailto + rappel.
   function buildBlockFile(g){
     var html = '';
-    html += '<p class="note">Votre navigateur ne peut pas joindre automatiquement un fichier à un e-mail. Le bouton ci-dessous ouvre le partage de votre appareil (choisissez Gmail/Mail/WhatsApp : le fichier sera joint automatiquement) ; si ce n\'est pas disponible, un e-mail s\'ouvrira et il faudra joindre le fichier vous-même avant d\'envoyer.</p>';
+    html += '<p class="note">1) Sélectionnez le fichier rempli (Word/Excel/PowerPoint/PDF) puis <strong>Enregistrer</strong> : il est gardé sur cet appareil et un lien de téléchargement apparaît ci-dessous. 2) Utilisez ensuite <strong>Envoyer au facilitateur</strong> pour le transmettre par e-mail/WhatsApp (votre navigateur ne peut pas joindre un fichier automatiquement à un e-mail : sur mobile le partage joint le fichier tout seul, sur ordinateur il faudra le joindre vous-même).</p>';
     html += '<div class="fieldgrid">' +
       '<div class="field"><label>Type de travail</label><select id="file-kind">' +
         '<option value="1">Travail de groupe 1 — Synthèse régionale</option>' +
@@ -519,10 +519,28 @@
         '<input type="file" id="file-input" accept=".doc,.docx,.xls,.xlsx,.ppt,.pptx,.pdf,.odt,.ods"></div>' +
       '</div>';
     html += '<div class="savebar">' +
-      '<button class="btn sm" id="file-send">Envoyer le fichier au facilitateur</button>' +
+      '<button class="btn sm" id="file-save">Enregistrer le fichier</button>' +
+      '<button class="btn ghost sm" id="file-send">Envoyer au facilitateur</button>' +
       '<span class="status" id="file-status"></span>' +
       '</div>';
+    html += '<div class="subhead" style="margin-top:16px">Fichiers enregistrés sur cet appareil</div>';
+    html += '<div id="blockFile-list">' + fileListHtml(g.slug) + '</div>';
     document.getElementById('blockFile-body').innerHTML = html;
+
+    document.getElementById('file-save').addEventListener('click', function(){
+      var st = document.getElementById('file-status');
+      var input = document.getElementById('file-input');
+      var file = input.files && input.files[0];
+      if (!file){ st.textContent = 'Merci de sélectionner un fichier.'; return; }
+      var kind = document.getElementById('file-kind').value;
+      st.textContent = 'Enregistrement en cours…';
+      readFileAsDataURL(file).then(function(dataUrl){
+        var files = getGroupFiles(g.slug);
+        files.push({id:genId(), name:file.name, size:file.size, type:file.type, kind:kind, addedLe:new Date().toISOString(), dataUrl:dataUrl});
+        setGroupFiles(g.slug, files);
+        buildBlockFile(g);
+      }).catch(function(){ st.textContent = "Erreur lors de l'enregistrement de ce fichier."; });
+    });
 
     document.getElementById('file-send').addEventListener('click', function(){
       var st = document.getElementById('file-status');
@@ -547,6 +565,8 @@
         fallbackMailto();
       }
     });
+
+    wireFileListButtons(g.slug, '#blockFile-list', function(){ buildBlockFile(g); });
   }
 
   // ================= BLOCK A : Synthèse régionale =================
@@ -987,7 +1007,7 @@
       }).catch(function(){ st.textContent = "Erreur lors de l'import de ce fichier."; });
     });
 
-    wireFileListButtons(slug);
+    wireFileListButtons(slug, '#gf-list', function(){ buildDashGroupeForm(slug); });
   }
 
   function fileListHtml(slug){
@@ -1004,18 +1024,18 @@
     return html;
   }
 
-  function wireFileListButtons(slug){
-    document.querySelectorAll('#gf-list [data-dl]').forEach(function(btn){
+  function wireFileListButtons(slug, containerSel, onChange){
+    document.querySelectorAll(containerSel + ' [data-dl]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var f = getGroupFiles(slug).filter(function(x){ return x.id === btn.getAttribute('data-dl'); })[0];
         if (f) downloadDataUrl(f.dataUrl, f.name);
       });
     });
-    document.querySelectorAll('#gf-list [data-del]').forEach(function(btn){
+    document.querySelectorAll(containerSel + ' [data-del]').forEach(function(btn){
       btn.addEventListener('click', function(){
         var id = btn.getAttribute('data-del');
         setGroupFiles(slug, getGroupFiles(slug).filter(function(x){ return x.id !== id; }));
-        buildDashGroupeForm(slug);
+        if (onChange) onChange();
       });
     });
   }
