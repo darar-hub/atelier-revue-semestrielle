@@ -30,5 +30,8 @@
   {"nom": "Abdourahman Moussa Ahmed", "structure": "Ministère de la Santé – Hôpital Militaire soudanais", "groupe": "djibouti-ville"},
   {"nom": "Kamil Dini Cheik", "structure": "Ministère de la Santé – PEV", "groupe": "djibouti-ville"},
   {"nom": "Amina Elmi Yabeh", "structure": "Ministère de la Santé – PEV", "groupe": "djibouti-ville"},
-  {"nom": "Foulyeh Abdillahi Saleh", "structure": "Ministère de la Santé – PEV", "groupe": "arta"}
+  {"nom": "Foulyeh Abdillahi Saleh", "structure": "Ministère de la Santé – PEV", "groupe": "arta"},
+  {"nom": "Dabayta Mohhamed", "structure": "Ministère de la Santé – DGOS", "groupe": "djibouti-ville"},
+  {"nom": "Kévine Laure Nkaghere Mbuembue", "structure": "OMS", "groupe": "djibouti-ville"},
+  {"nom": "Kadidja Houmed Omar", "structure": "Ministère de la Santé – DGOS", "groupe": "djibouti-ville"}
 ]
