@@ -16,5 +16,7 @@
   {"nom": "Ilhan Abdoulkader", "structure": "Ministère de la Santé – PK12", "groupe": "djibouti-ville"},
   {"nom": "Neima Farah Hared", "structure": "CNSS", "groupe": "djibouti-ville"},
   {"nom": "Bachir Hassan", "structure": "CNSS", "groupe": "djibouti-ville"},
-  {"nom": "Kaltoum Hassan Omar", "structure": "Ministère de la Santé – PEV", "groupe": "djibouti-ville"}
+  {"nom": "Kaltoum Hassan Omar", "structure": "Ministère de la Santé – PEV", "groupe": "djibouti-ville"},
+  {"nom": "Omar (Agent PEV Farahad)", "structure": "Ministère de la Santé – PEV", "groupe": "djibouti-ville"},
+  {"nom": "Abdoulkader Hamadou Hassan", "structure": "Ministère de la Santé – PEV", "groupe": "dikhil"}
 ]
