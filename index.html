@@ -169,6 +169,12 @@
       </div>
     </div>
 
+    <div class="field" id="g-structure-field" style="display:none; max-width:420px; margin-top:16px;">
+      <label>Structure de santé (Djibouti Ville)</label>
+      <select id="g-structure-select"></select>
+      <p class="note" style="margin-top:8px">Chaque structure remplit et télécharge son propre travail, séparément des autres. Votre choix reste mémorisé sur cet appareil.</p>
+    </div>
+
     <div class="tools">
       <div class="tool">
         <span class="tag">Canevas</span>
@@ -311,6 +317,40 @@
     {slug:"tadjourah", name:"Tadjourah", kind:"Région", dataLabel:"Tadjourah_bon.xls"},
     {slug:"djibouti-ville", name:"Djibouti Ville", kind:"Points focaux FOSA", dataLabel:"Outil_vierge_bon.xls"}
   ];
+  // Djibouti Ville est composée de 15 structures de santé — chacune remplit son propre travail,
+  // séparément, sur la même page de groupe (sélecteur "Structure de santé").
+  var STRUCTURES = {
+    "djibouti-ville": [
+      "Polyclinique Houmed",
+      "Polyclinique d'Arnaud",
+      "Quartier 7",
+      "Ambouli",
+      "Ibrahim Balala",
+      "Polyclinique Farah Had",
+      "Khor-Bourhan",
+      "BB2",
+      "BB1",
+      "Wahle Daba",
+      "Polyclinique de Hayableh",
+      "Polyclinique Dr Gouled",
+      "Cité Nassib",
+      "Polyclinique Iftin",
+      "PK20"
+    ]
+  };
+  function slugify(s){
+    return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-+|-+$)/g,'');
+  }
+  function getStructures(g){ return (g && STRUCTURES[g.slug]) || null; }
+  // Une "unité" est soit une région entière (pas de sous-structures), soit une structure de
+  // santé au sein d'une région (ex. Djibouti Ville). unitKey sert de clé de stockage ; unitLabel
+  // est le nom affiché.
+  function fileUnitsForGroup(g){
+    var subs = STRUCTURES[g.slug];
+    if (!subs) return [{key: g.slug, label: g.name, structure: null}];
+    return subs.map(function(s){ return {key: g.slug + '__' + slugify(s), label: s, structure: s}; });
+  }
   var DEST_EMAIL = 'hyusef@gmail.com';
   var FACILITATOR_PIN = '123456';
   var FAC_AUTH_KEY = 'pev_fac_auth';
@@ -459,7 +499,8 @@
       checkDashAuth();
       return;
     }
-    var g = findGroup(hash);
+    var hashParts = hash.split('/');
+    var g = findGroup(hashParts[0]);
     if (!g){
       hub.classList.add('active'); groupView.classList.remove('active'); dashView.classList.remove('active');
       setActiveNav('');
@@ -468,7 +509,6 @@
     hub.classList.remove('active'); dashView.classList.remove('active'); groupView.classList.add('active');
     setActiveNav('');
     gEyebrow.textContent = g.kind;
-    gTitle.textContent = g.name;
     document.getElementById('g-canevas-pill').textContent = 'canevas-' + g.slug + '.pptx';
     var dataPill = document.getElementById('g-data-pill');
     dataPill.textContent = g.dataLabel;
@@ -477,9 +517,44 @@
     gQr.src = 'files/qr-' + g.slug + '.png';
     gQr.alt = 'QR code — Groupe ' + g.name;
 
-    buildBlockFile(g);
-    buildBlockA(g);
-    buildBlockB(g);
+    var structureField = document.getElementById('g-structure-field');
+    var structureSelect = document.getElementById('g-structure-select');
+    var structures = getStructures(g);
+    var unit;
+
+    if (structures){
+      structureField.style.display = 'block';
+      var requested = hashParts[1] ? decodeURIComponent(hashParts[1]) : null;
+      var stored = localStorage.getItem('pev_structure_' + g.slug);
+      var selected = null;
+      if (requested) selected = structures.filter(function(s){ return slugify(s) === slugify(requested); })[0];
+      if (!selected && stored) selected = structures.filter(function(s){ return s === stored; })[0];
+      if (!selected) selected = structures[0];
+
+      structureSelect.innerHTML = structures.map(function(s){
+        return '<option value="' + escapeHtml(s) + '"' + (s === selected ? ' selected' : '') + '>' + escapeHtml(s) + '</option>';
+      }).join('');
+      structureSelect.value = selected;
+      localStorage.setItem('pev_structure_' + g.slug, selected);
+      if (hashParts[1] !== slugify(selected)){
+        history.replaceState(null, '', '#' + g.slug + '/' + slugify(selected));
+      }
+
+      gTitle.textContent = g.name + ' — ' + selected;
+      unit = {key: g.slug + '__' + slugify(selected), label: selected};
+
+      structureSelect.onchange = function(){
+        location.hash = g.slug + '/' + slugify(structureSelect.value);
+      };
+    } else {
+      structureField.style.display = 'none';
+      gTitle.textContent = g.name;
+      unit = {key: g.slug, label: null};
+    }
+
+    buildBlockFile(g, unit);
+    buildBlockA(g, unit);
+    buildBlockB(g, unit);
   }
   window.addEventListener('hashchange', render);
 
@@ -519,9 +594,11 @@
   // (re)télécharger aussitôt — c'est ce fichier téléchargé que le groupe transmet
   // ensuite lui-même (email/WhatsApp/clé USB) ; le facilitateur l'importe de son côté
   // dans l'onglet « Fichiers des groupes » du tableau de bord.
-  function buildBlockFile(g){
+  function buildBlockFile(g, unit){
+    var fileKey = unit.key;
+    var namePrefix = unit.label ? slugify(unit.label) : g.slug;
     var html = '';
-    html += '<p class="note">Sélectionnez le fichier rempli (Word/Excel/PowerPoint/PDF), puis <strong>Enregistrer et télécharger</strong> : le fichier est gardé sur cet appareil et téléchargé immédiatement avec un nom qui identifie la région et le travail — prêt à être transmis au facilitateur (email, WhatsApp, clé USB…).</p>';
+    html += '<p class="note">Sélectionnez le fichier rempli (Word/Excel/PowerPoint/PDF), puis <strong>Enregistrer et télécharger</strong> : le fichier est gardé sur cet appareil et téléchargé immédiatement avec un nom qui identifie ' + (unit.label ? 'la structure' : 'la région') + ' et le travail — prêt à être transmis au facilitateur (email, WhatsApp, clé USB…).</p>';
     html += '<div class="fieldgrid">' +
       '<div class="field"><label>Type de travail</label><select id="file-kind">' +
         '<option value="1">Travail de groupe 1 — Synthèse régionale</option>' +
@@ -535,7 +612,7 @@
       '<span class="status" id="file-status"></span>' +
       '</div>';
     html += '<div class="subhead" style="margin-top:16px">Fichiers enregistrés sur cet appareil</div>';
-    html += '<div id="blockFile-list">' + fileListHtml(g.slug) + '</div>';
+    html += '<div id="blockFile-list">' + fileListHtml(fileKey) + '</div>';
     document.getElementById('blockFile-body').innerHTML = html;
 
     document.getElementById('file-save').addEventListener('click', function(){
@@ -545,23 +622,25 @@
       if (!file){ st.textContent = 'Merci de sélectionner un fichier.'; return; }
       var kind = document.getElementById('file-kind').value;
       var kindLabel = kind === '2' ? 'Groupe2' : 'Groupe1';
-      var downloadName = g.slug + '_' + kindLabel + '_' + file.name;
+      var downloadName = namePrefix + '_' + kindLabel + '_' + file.name;
       st.textContent = 'Enregistrement en cours…';
       readFileAsDataURL(file).then(function(dataUrl){
-        var files = getGroupFiles(g.slug);
+        var files = getGroupFiles(fileKey);
         files.push({id:genId(), name:downloadName, size:file.size, type:file.type, kind:kind, addedLe:new Date().toISOString(), dataUrl:dataUrl});
-        setGroupFiles(g.slug, files);
+        setGroupFiles(fileKey, files);
         downloadDataUrl(dataUrl, downloadName);
-        buildBlockFile(g);
+        buildBlockFile(g, unit);
       }).catch(function(){ st.textContent = "Erreur lors de l'enregistrement de ce fichier."; });
     });
 
-    wireFileListButtons(g.slug, '#blockFile-list', function(){ buildBlockFile(g); });
+    wireFileListButtons(fileKey, '#blockFile-list', function(){ buildBlockFile(g, unit); });
   }
 
   // ================= BLOCK A : Synthèse régionale =================
-  function buildBlockA(g){
-    var key = 'pev_synthese_' + g.slug;
+  function buildBlockA(g, unit){
+    var displayName = unit.label ? (g.name + ' — ' + unit.label) : g.name;
+    var namePrefix = unit.label ? slugify(unit.label) : g.slug;
+    var key = 'pev_synthese_' + unit.key;
     var data = lsGet(key, {completude:'', promptitude:'',
       visites:{tPlan:'',hPlan:'',mPlan:'',fPlan:'',tReal:'',hReal:'',mReal:'',fReal:''},
       cas:{}, forces:'', faiblesses:'', problemes:{}});
@@ -674,7 +753,7 @@
       var d = collect();
       lsSet(key, d);
       var rows = [
-        ['GROUPE', g.name],
+        ['GROUPE', displayName],
         ['TRAVAIL DE GROUPE 1 — SYNTHÈSE RÉGIONALE S1 2026', ''],
         [],
         ['Taux de complétude (%)', d.completude],
@@ -700,7 +779,7 @@
       ws['!cols'] = [{wch:32},{wch:28},{wch:28},{wch:28}];
       var wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Groupe 1');
-      XLSX.writeFile(wb, g.slug + '_Groupe1_' + g.name.replace(/\s+/g,'_') + '.xlsx');
+      XLSX.writeFile(wb, namePrefix + '_Groupe1_' + displayName.replace(/\s+/g,'_') + '.xlsx');
       st.textContent = 'Fichier Excel téléchargé.';
       setTimeout(function(){ st.textContent=''; }, 3000);
     });
@@ -709,7 +788,7 @@
       var d = collect();
       lsSet(key, d);
       var lignes = [
-        'GROUPE : ' + g.name,
+        'GROUPE : ' + displayName,
         'TRAVAIL DE GROUPE 1 — SYNTHÈSE RÉGIONALE S1 2026',
         '',
         'Taux de complétude : ' + d.completude + '%',
@@ -732,13 +811,15 @@
           lignes.push('  [' + t + '] Problème: ' + (p.probleme||'-') + ' | Cause: ' + (p.cause||'-') + ' | Action: ' + (p.action||'-'));
         }
       });
-      openMailto('Travail de groupe 1 - ' + g.name, lignes.join('\n'));
+      openMailto('Travail de groupe 1 - ' + displayName, lignes.join('\n'));
     });
   }
 
   // ================= BLOCK B : Polio et autres MEV =================
-  function buildBlockB(g){
-    var key = 'pev_poliomev_' + g.slug;
+  function buildBlockB(g, unit){
+    var displayName = unit.label ? (g.name + ' — ' + unit.label) : g.name;
+    var namePrefix = unit.label ? slugify(unit.label) : g.slug;
+    var key = 'pev_poliomev_' + unit.key;
     var data = lsGet(key, {membres:'', lignes:PROBLEMES_FIXES.map(function(p){ return {probleme:p, cause:'', solution:''}; }), recommandations:''});
     if (!data.lignes || data.lignes.length !== PROBLEMES_FIXES.length){
       data.lignes = PROBLEMES_FIXES.map(function(p){ return {probleme:p, cause:'', solution:''}; });
@@ -792,7 +873,7 @@
       var d = collect();
       lsSet(key, d);
       var rows = [
-        ['GROUPE', g.name],
+        ['GROUPE', displayName],
         ['TRAVAIL DE GROUPE 2 — SURVEILLANCE POLIO ET AUTRES MEV', ''],
         [],
         ['Membres du groupe', d.membres || ''],
@@ -806,7 +887,7 @@
       ws['!cols'] = [{wch:45},{wch:35},{wch:35}];
       var wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Groupe 2');
-      XLSX.writeFile(wb, g.slug + '_Groupe2_' + g.name.replace(/\s+/g,'_') + '.xlsx');
+      XLSX.writeFile(wb, namePrefix + '_Groupe2_' + displayName.replace(/\s+/g,'_') + '.xlsx');
       st.textContent = 'Fichier Excel téléchargé.';
       setTimeout(function(){ st.textContent=''; }, 3000);
     });
@@ -815,7 +896,7 @@
       var d = collect();
       lsSet(key, d);
       var lignes = [
-        'GROUPE : ' + g.name,
+        'GROUPE : ' + displayName,
         'TRAVAIL DE GROUPE 2 — SURVEILLANCE POLIO ET AUTRES MEV',
         '',
         'Membres : ' + (d.membres || '(non renseigné)'),
@@ -830,7 +911,7 @@
       });
       lignes.push('');
       lignes.push('Recommandations : ' + (d.recommandations || '(vide)'));
-      openMailto('Travail de groupe 2 (Polio-MEV) - ' + g.name, lignes.join('\n'));
+      openMailto('Travail de groupe 2 (Polio-MEV) - ' + displayName, lignes.join('\n'));
     });
   }
 
@@ -1019,33 +1100,43 @@
     var host = document.getElementById('gf-regions');
     if (!host) return;
     var html = '';
+    var allUnits = [];
     GROUPS.forEach(function(g){
-      html += '<div class="subhead" style="margin-top:16px">' + g.name + '</div>' +
-        '<div class="fieldgrid">' +
-          '<div class="field"><label>Travail</label><select id="gf-kind-' + g.slug + '"><option value="1">Travail de groupe 1</option><option value="2">Travail de groupe 2</option></select></div>' +
-          '<div class="field"><label>Importer le fichier reçu (Word/Excel/PowerPoint/PDF)</label><input type="file" id="gf-input-' + g.slug + '"></div>' +
-        '</div>' +
-        '<span class="status" id="gf-status-' + g.slug + '"></span>' +
-        '<div id="gf-list-' + g.slug + '">' + fileListHtml(g.slug) + '</div>';
+      var units = fileUnitsForGroup(g);
+      allUnits = allUnits.concat(units);
+      html += '<div class="subhead" style="margin-top:16px">' + g.name + (units.length > 1 ? ' <span class="note" style="display:inline">(' + units.length + ' structures)</span>' : '') + '</div>';
+      html += units.length > 1 ? '<details style="margin-top:6px"><summary style="cursor:pointer">Voir les ' + units.length + ' structures</summary>' : '';
+      units.forEach(function(u){
+        html += (units.length > 1 ? '<div style="margin-top:12px; padding-top:12px; border-top:1px solid var(--line)">' : '') +
+          (u.structure ? '<div style="font-weight:600; font-size:13px; margin-bottom:6px">' + escapeHtml(u.structure) + '</div>' : '') +
+          '<div class="fieldgrid">' +
+            '<div class="field"><label>Travail</label><select id="gf-kind-' + u.key + '"><option value="1">Travail de groupe 1</option><option value="2">Travail de groupe 2</option></select></div>' +
+            '<div class="field"><label>Importer le fichier reçu (Word/Excel/PowerPoint/PDF)</label><input type="file" id="gf-input-' + u.key + '"></div>' +
+          '</div>' +
+          '<span class="status" id="gf-status-' + u.key + '"></span>' +
+          '<div id="gf-list-' + u.key + '">' + fileListHtml(u.key) + '</div>' +
+          (units.length > 1 ? '</div>' : '');
+      });
+      html += units.length > 1 ? '</details>' : '';
     });
     host.innerHTML = html;
 
-    GROUPS.forEach(function(g){
-      document.getElementById('gf-input-' + g.slug).addEventListener('change', function(){
-        var st = document.getElementById('gf-status-' + g.slug);
-        var input = document.getElementById('gf-input-' + g.slug);
+    allUnits.forEach(function(u){
+      document.getElementById('gf-input-' + u.key).addEventListener('change', function(){
+        var st = document.getElementById('gf-status-' + u.key);
+        var input = document.getElementById('gf-input-' + u.key);
         var file = input.files && input.files[0];
         if (!file) return;
-        var kind = document.getElementById('gf-kind-' + g.slug).value;
+        var kind = document.getElementById('gf-kind-' + u.key).value;
         st.textContent = 'Import en cours…';
         readFileAsDataURL(file).then(function(dataUrl){
-          var files = getGroupFiles(g.slug);
+          var files = getGroupFiles(u.key);
           files.push({id:genId(), name:file.name, size:file.size, type:file.type, kind:kind, addedLe:new Date().toISOString(), dataUrl:dataUrl});
-          setGroupFiles(g.slug, files);
+          setGroupFiles(u.key, files);
           buildGroupFilesTab();
         }).catch(function(){ st.textContent = "Erreur lors de l'import de ce fichier."; });
       });
-      wireFileListButtons(g.slug, '#gf-list-' + g.slug, buildGroupFilesTab);
+      wireFileListButtons(u.key, '#gf-list-' + u.key, buildGroupFilesTab);
     });
   }
 
@@ -1055,13 +1146,15 @@
     var zip = new JSZip();
     var total = 0;
     GROUPS.forEach(function(gr){
-      var files = getGroupFiles(gr.slug);
-      if (!files.length) return;
-      var folder = zip.folder(gr.slug);
-      files.forEach(function(f){
-        var kindLabel = f.kind === '2' ? 'groupe2' : 'groupe1';
-        folder.file('[' + kindLabel + '] ' + f.name, dataURLtoBlob(f.dataUrl));
-        total++;
+      fileUnitsForGroup(gr).forEach(function(u){
+        var files = getGroupFiles(u.key);
+        if (!files.length) return;
+        var folder = u.structure ? zip.folder(gr.slug).folder(slugify(u.structure)) : zip.folder(gr.slug);
+        files.forEach(function(f){
+          var kindLabel = f.kind === '2' ? 'groupe2' : 'groupe1';
+          folder.file('[' + kindLabel + '] ' + f.name, dataURLtoBlob(f.dataUrl));
+          total++;
+        });
       });
     });
     if (!total){ st.textContent = "Aucun fichier importé pour l'instant — importez d'abord les fichiers région par région ci-dessous."; return; }
