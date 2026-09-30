@@ -679,9 +679,23 @@
   var REG_KEY = 'pev_dash_registrations';
   var GROUPEDATA_KEY_PREFIX = 'pev_dash_groupe_';
 
+  function fetchOfficialRegistrations(){
+    var bust = Date.now();
+    // raw.githubusercontent.com se met à jour en quelques secondes après un push,
+    // contrairement au cache CDN de githack qui peut prendre plusieurs minutes.
+    return fetch('https://raw.githubusercontent.com/darar-hub/atelier-revue-semestrielle/main/data/registrations.json?t=' + bust, {cache:'no-store'})
+      .then(function(r){ if (!r.ok) throw new Error('primary source failed'); return r.json(); })
+      .catch(function(){
+        // repli sur githack si githubusercontent est indisponible
+        return fetch('https://raw.githack.com/darar-hub/atelier-revue-semestrielle/main/data/registrations.json?t=' + bust, {cache:'no-store'})
+          .then(function(r){ return r.ok ? r.json() : []; })
+          .catch(function(){ return []; });
+      });
+  }
+
   function renderDashboard(){
     var local = lsGet(REG_KEY, []);
-    fetch('https://raw.githack.com/darar-hub/atelier-revue-semestrielle/main/data/registrations.json?t=' + Date.now(), {cache:'no-store'}).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; }).then(function(official){
+    fetchOfficialRegistrations().then(function(official){
       (official||[]).forEach(function(r){ r.official = true; });
       var regs = (official||[]).concat(local);
       renderKpis(regs);
