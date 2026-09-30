@@ -1,3 +1,9 @@
 [
-  {"nom": "Abdallah", "structure": "OMS", "groupe": "djibouti-ville"}
+  {"nom": "Abdallah", "structure": "OMS", "groupe": "djibouti-ville"},
+  {"nom": "Moussa Ali Moussa", "structure": "Ministère de la Santé – CMH Obock", "groupe": "obock"},
+  {"nom": "Aden Abdillahi Guirreh", "structure": "Ministère de la Santé – CMH Arta", "groupe": "arta"},
+  {"nom": "Awo Moumin Guirreh", "structure": "Ministère de la Santé – CSC Nassib", "groupe": "djibouti-ville"},
+  {"nom": "Nima Omar Hoch", "structure": "Ministère de la Santé – Polyclinique Hayableh", "groupe": "djibouti-ville"},
+  {"nom": "Araksan Abdoulkader Ali", "structure": "Ministère de la Santé – PEV", "groupe": "djibouti-ville"},
+  {"nom": "Abdi Houssein Egueh", "structure": "Ministère de la Santé – CMH Dikhil", "groupe": "dikhil"}
 ]
