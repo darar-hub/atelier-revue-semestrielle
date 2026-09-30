@@ -317,10 +317,12 @@
     {slug:"tadjourah", name:"Tadjourah", kind:"Région", dataLabel:"Tadjourah_bon.xls"},
     {slug:"djibouti-ville", name:"Djibouti Ville", kind:"Points focaux FOSA", dataLabel:"Outil_vierge_bon.xls"}
   ];
-  // Djibouti Ville est composée de 18 structures de santé — chacune remplit son propre travail,
+  // Djibouti Ville est composée de 17 structures de santé — chacune remplit son propre travail,
   // séparément, sur la même page de groupe (sélecteur "Structure de santé").
   // PK12 ajoutée le 30/09/2026 : distincte de PK20, confirmée par la présentation de Djibouti Ville
   // (point focal Ilhan Abdoulkader) et par la liste officielle des 15 FOSA supervisées (juin-août 2026).
+  // "Polyclinique Dr Gouled" retirée le 30/09/2026 : confirmé par l'utilisateur qu'il s'agit du même
+  // établissement que "PK12" (ancien nom), pas d'une structure distincte.
   var STRUCTURES = {
     "djibouti-ville": [
       "Polyclinique Houmed",
@@ -334,7 +336,6 @@
       "BB1",
       "Wahle Daba",
       "Polyclinique de Hayableh",
-      "Polyclinique Dr Gouled",
       "Cité Nassib",
       "Polyclinique Iftin",
       "PK20",
